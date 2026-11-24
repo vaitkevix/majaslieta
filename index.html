@@ -347,7 +347,7 @@ function renderPoga() {
 function kadFromBtn(k) {
   const L = (Array.isArray(k) ? k : [k]).filter(Boolean); if (!L.length) return null;
   const f = L[0], n = (v) => v == null || v === '' ? 0 : +v || 0, sum = (key) => L.reduce((s, x) => s + n(x[key]), 0);
-  const telp = {}; L.forEach(x => (x.telpas || []).forEach(t => { const k = String(t.nosaukums || 'Telpa').trim().toLowerCase(); const e = telp[k] || (telp[k] = { nosaukums: cap(String(t.nosaukums || 'Telpa').trim()), m2: 0, skaits: 0 }); e.m2 += n(t.m2); e.skaits += n(t.skaits) || 1; }));
+  const telp = {}; L.forEach(x => (x.telpas_st || x.telpas || []).forEach(t => { const z = t.zona || '', k = z + '|' + String(t.nosaukums || 'Telpa').trim().toLowerCase(); const e = telp[k] || (telp[k] = { zona: z, nosaukums: cap(String(t.nosaukums || 'Telpa').trim()), m2: 0, skaits: 0 }); e.m2 += n(t.m2); e.skaits += n(t.skaits) || 1; }));
   const citi = {};
   if (sum('dzivoklu_m2')) citi['Dzīvokļu platība, m²'] = Math.round(sum('dzivoklu_m2') * 10) / 10;
   if (sum('kopl_iek')) citi['Koplietošanas iekštelpas, m²'] = Math.round(sum('kopl_iek') * 10) / 10;
@@ -368,10 +368,17 @@ function parseTelpas(str) {
     const k = m[1].trim().toLowerCase(), e = o[k] || (o[k] = { nosaukums: cap(m[1].trim()), m2: 0, skaits: 0 }); e.m2 += parseFloat(m[2].replace(',', '.')) || 0; e.skaits += +m[3] || 1; });
   return Object.values(o).map(t => Object.assign(t, { m2: Math.round(t.m2 * 10) / 10 })).sort((a, b) => b.m2 - a.m2);
 }
+const ZONAS = ['Virszeme', 'Pagrabs', 'Bēniņi / jumts'];
 function telpasTbl(T) {
   if (!T.length) return '';
+  if (T.some(t => t.zona)) return ZONAS.concat([...new Set(T.map(t => t.zona))].filter(z => ZONAS.indexOf(z) === -1))
+    .map(z => telpasTbl1(T.filter(t => (t.zona || 'Virszeme') === z), 'Koplietošanas telpas · ' + z.toLowerCase())).join('');
+  return telpasTbl1(T, 'Koplietošanas telpas');
+}
+function telpasTbl1(T, title) {
+  if (!T.length) return '';
   const tm = T.reduce((s, t) => s + t.m2, 0), ts = T.reduce((s, t) => s + t.skaits, 0);
-  return `<div class="bld"><h3>Koplietošanas telpas</h3><div class="tw"><table class="tb"><thead><tr><th>Telpa</th><th class="r">Skaits</th><th class="r">Platība, m²</th></tr></thead><tbody>${
+  return `<div class="bld"><h3>${esc(title)}</h3><div class="tw"><table class="tb"><thead><tr><th>Telpa</th><th class="r">Skaits</th><th class="r">Platība, m²</th></tr></thead><tbody>${
     T.map(t => `<tr><td>${esc(t.nosaukums)}</td><td class="r">${t.skaits}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Kopā</td><td class="r">${ts}</td><td class="r">${nf(Math.round(tm * 10) / 10)}</td></tr></tfoot></table></div></div>`;
 }
 function grupasTbl(G) {
