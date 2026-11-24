@@ -521,39 +521,58 @@ function impSheet(text, url, title, anorm) {
   };
 }
 const stavMsg = (sv) => sv && sv.stavState === 'added' ? ' · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : sv && sv.stavState === 'off' ? ' · Pazemes stāvvietas izslēgtas — nemainīts' : '';
+const NEWV = '+new', shortAdr = (x) => String(x || '').split(',')[0].replace(/\s+iela\b/i, '').replace(/\s+/g, ' ').trim();
+const newOpt = (pre) => can('admin') ? `<option value="${NEWV}" ${pre === NEWV ? 'selected' : ''}>+ Izveidot jaunu objektu</option>` : '';
+const newBox = (id, v, show) => can('admin') ? `<div class="f" id="${id}Box" ${show ? '' : 'hidden'}><label for="${id}">Jaunā objekta adrese</label><input id="${id}" value="${esc(v)}" autocomplete="off"><p class="hint">Vadītāju, grupu un pārējo iestatīsiet cilnē «Objekts» pēc saglabāšanas.</p></div>` : '';
+const newBtn = (attr) => can('admin') ? `<button class="pill dk" ${attr} style="margin:-4px 0 10px">+ Izveidot objektu</button>` : '';
+async function mkObj(adrese) {   // jauns objekts no kadastra → atgriež anorm
+  const k = adrese.toLowerCase(), ex = S.D.objects.find(x => x.adrese.toLowerCase() === k); if (ex) return ex.anorm;   // atkārtots mēģinājums — jau izveidots
+  await call('objSave', { old: '', obj: { adrese, grupa: 'SH objekti' } }); S.M = null; await load();
+  const f = S.D.objects.find(x => x.adrese.toLowerCase() === k);
+  if (!f) throw new Error('Objekts izveidots, bet nav atrasts — atjaunojiet lapu'); return f.anorm;
+}
 const cleanDati = (d) => { const x = JSON.parse(JSON.stringify(d || {})); (x.grupas || []).forEach(g => { delete g._i; }); return x; };
 /* Vairākas būves vienā nolasījumā: katrai sava objekta izvēle; vai visas kopā vienā objektā */
 function impMulti(items, keep) {
   S.kadEdit = can('admin'); keep = keep || {};
-  const opts = (pre) => `<option value="">— nesaglabāt —</option>` + S.D.objects.map(o => `<option value="${esc(o.anorm)}" ${o.anorm === pre ? 'selected' : ''}>${esc(o.adrese)}</option>`).join('');
+  const opts = (pre) => `<option value="">— nesaglabāt —</option>` + newOpt(pre) + S.D.objects.map(o => `<option value="${esc(o.anorm)}" ${o.anorm === pre ? 'selected' : ''}>${esc(o.adrese)}</option>`).join('');
   const s = sheet(`<div class="hd"><h3>${items.length} mājas uz zemes gabala</h3>${X}</div>
     <p class="note">Katra māja tiks saglabāta savā objektā. Ja kādu nevajag — izvēlieties «nesaglabāt».</p>
     ${(() => { const used = new Set(); return items.map((r, i) => { const sug = r.ieteikumi || []; let pre = keep[i];
         if (pre == null) { const f = sug.find(x => !used.has(x.anorm)); pre = f ? f.anorm : ''; } if (pre) used.add(pre);
       return `<div class="card" data-bi="${i}" style="margin:0 0 12px"><h3 style="margin:0 0 8px;font-size:17px">${esc(r.name)}</h3>
         <div class="f"><label for="mObj${i}">Objekts</label><select id="mObj${i}" data-m="${i}">${opts(pre)}</select></div>
-        ${sug.length ? `<div class="chips" style="margin:-4px 0 10px">${sug.map(x => `<button data-mi="${i}" data-a="${esc(x.anorm)}" class="${x.anorm === pre ? 'on' : ''}">${esc(x.adrese)}</button>`).join('')}</div>` : '<p class="note">Līdzīgs objekts nav atrasts — izvēlieties pats.</p>'}
+        ${newBox('mNew' + i, r._new != null ? r._new : shortAdr(r.name), pre === NEWV)}
+        ${sug.length ? `<div class="chips" style="margin:-4px 0 10px">${sug.map(x => `<button data-mi="${i}" data-a="${esc(x.anorm)}" class="${x.anorm === pre ? 'on' : ''}">${esc(x.adrese)}</button>`).join('')}</div>` : `<p class="note">Līdzīgs objekts nav atrasts — izvēlieties pats${can('admin') ? ' vai izveidojiet jaunu' : ''}.</p>${pre === NEWV ? '' : newBtn(`data-mk="${i}"`)}`}
         <details><summary style="cursor:pointer;font-weight:800">Kadastra dati</summary>${kadHtml(r.dati)}</details></div>`; }).join(''); })()}
     <div class="f"><label class="ochk"><input type="checkbox" id="mOne">Saglabāt visas kopā vienā objektā</label></div>
     <div class="f" id="mOneBox" hidden><label for="mOneObj">Objekts visām mājām kopā</label><select id="mOneObj">${opts('').replace('— nesaglabāt —', '— izvēlieties objektu —')}</select></div>
+    ${newBox('mOneNew', shortAdr(items[0] && items[0].name), false)}
     <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="mSave">Saglabāt</button></div>`);
   s.parentNode.dataset.keep = '1';
-  const cur = () => Object.fromEntries(items.map((_, i) => [i, $('mObj' + i).value]));
-  s.querySelectorAll('[data-mi]').forEach(b => b.onclick = () => { const i = b.dataset.mi; $('mObj' + i).value = b.dataset.a; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+  const cur = () => Object.fromEntries(items.map((r, i) => { if ($('mNew' + i)) r._new = $('mNew' + i).value; return [i, $('mObj' + i).value]; }));
+  const syncNew = (i) => { const bx = $('mNew' + i + 'Box'); if (bx) bx.hidden = $('mObj' + i).value !== NEWV; const mk = s.querySelector(`[data-mk="${i}"]`); if (mk) mk.hidden = $('mObj' + i).value === NEWV; };
+  items.forEach((_, i) => { $('mObj' + i).onchange = () => syncNew(i); });
+  s.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => { const i = b.dataset.mk; $('mObj' + i).value = NEWV; syncNew(i); $('mNew' + i).focus(); });
+  if ($('mOneObj')) $('mOneObj').onchange = () => { if ($('mOneNewBox')) $('mOneNewBox').hidden = $('mOneObj').value !== NEWV; };
+  s.querySelectorAll('[data-mi]').forEach(b => b.onclick = () => { const i = b.dataset.mi; $('mObj' + i).value = b.dataset.a; syncNew(i); b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
   s.querySelectorAll('[data-park]').forEach(b => b.onclick = () => { const r = items[+b.closest('[data-bi]').dataset.bi]; const g = r && (r.dati.grupas || [])[+b.dataset.park]; if (!g) return; g.park = !gPark(g); impMulti(items, cur()); });
   $('mOne').onchange = () => { $('mOneBox').hidden = !$('mOne').checked; };
   $('mSave').onclick = async () => {
     const b = $('mSave');
     if ($('mOne').checked) {
-      const a = $('mOneObj').value; if (!a) return toast('Izvēlieties objektu', 'err'); busy(b, 'Saglabā…');
-      try { const sv = await call('kadSave', { anorm: a, dati: cleanDati(S.impAll), url: S.imp.url }); closeSheet(); toast('Saglabāts vienā objektā' + stavMsg(sv)); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+      let a = $('mOneObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
+      const nn = a === NEWV ? $('mOneNew').value.trim() : ''; if (a === NEWV && !nn) return toast('Ierakstiet jaunā objekta adresi', 'err'); busy(b, 'Saglabā…');
+      try { if (nn) a = await mkObj(nn); const sv = await call('kadSave', { anorm: a, dati: cleanDati(S.impAll), url: S.imp.url }); closeSheet(); toast('Saglabāts vienā objektā' + stavMsg(sv)); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
       return;
     }
-    const sel = items.map((r, i) => ({ r, a: $('mObj' + i).value })).filter(x => x.a);
+    const sel = items.map((r, i) => ({ r, a: $('mObj' + i).value, n: $('mObj' + i).value === NEWV ? $('mNew' + i).value.trim() : '' })).filter(x => x.a);
     if (!sel.length) return toast('Izvēlieties objektu vismaz vienai mājai', 'err');
-    if (new Set(sel.map(x => x.a)).size < sel.length) return toast('Divām mājām izvēlēts viens objekts — atzīmējiet «kopā vienā objektā» vai izvēlieties citu', 'err');
+    if (sel.some(x => x.a === NEWV && !x.n)) return toast('Ierakstiet jaunā objekta adresi', 'err');
+    const keyOf = (x) => x.a === NEWV ? 'n:' + x.n.toLowerCase() : x.a;
+    if (new Set(sel.map(keyOf)).size < sel.length) return toast('Divām mājām izvēlēts viens objekts — atzīmējiet «kopā vienā objektā» vai izvēlieties citu', 'err');
     busy(b, 'Saglabā…'); const msgs = [];
-    try { for (const x of sel) { const sv = await call('kadSave', { anorm: x.a, dati: cleanDati(x.r.dati), url: S.imp.url }); msgs.push(stavMsg(sv)); }
+    try { for (const x of sel) { if (x.a === NEWV) { x.a = await mkObj(x.n); } const sv = await call('kadSave', { anorm: x.a, dati: cleanDati(x.r.dati), url: S.imp.url }); msgs.push(stavMsg(sv)); }
       closeSheet(); toast('Saglabātas ' + sel.length + ' mājas' + msgs.filter(Boolean).join('')); S.otab = 'kad'; await load(); await openObj(sel[0].a); }
     catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
@@ -562,18 +581,23 @@ function impPreview(r, keep) {
   S.kadEdit = can('admin');
   const sug = r.ieteikumi || [], pre = keep || S.imp.anorm || (sug[0] && sug[0].anorm) || '';
   const s = sheet(`<div class="hd"><h3>Pārbaudiet un saglabājiet</h3>${X}</div>
-    <div class="f"><label for="impObj">Objekts</label><select id="impObj"><option value="">— izvēlieties objektu —</option>${S.D.objects.map(o => `<option value="${esc(o.anorm)}" ${o.anorm === pre ? 'selected' : ''}>${esc(o.adrese)}</option>`).join('')}</select></div>
-    ${sug.length ? `<div class="chips" id="impSug" style="margin:-4px 0 12px">${sug.map(x => `<button data-a="${esc(x.anorm)}" class="${x.anorm === pre ? 'on' : ''}">${esc(x.adrese)}</button>`).join('')}</div>` : (r.dati && r.dati.adrese ? `<p class="note">Kadastrā: ${esc(r.dati.adrese)} — līdzīgs objekts nav atrasts, izvēlieties pats.</p>` : '')}
+    <div class="f"><label for="impObj">Objekts</label><select id="impObj"><option value="">— izvēlieties objektu —</option>${newOpt(pre)}${S.D.objects.map(o => `<option value="${esc(o.anorm)}" ${o.anorm === pre ? 'selected' : ''}>${esc(o.adrese)}</option>`).join('')}</select></div>
+    ${sug.length ? `<div class="chips" id="impSug" style="margin:-4px 0 12px">${sug.map(x => `<button data-a="${esc(x.anorm)}" class="${x.anorm === pre ? 'on' : ''}">${esc(x.adrese)}</button>`).join('')}</div>` : (r.dati && r.dati.adrese ? `<p class="note">Kadastrā: ${esc(r.dati.adrese)} — līdzīgs objekts nav atrasts, izvēlieties pats${can('admin') ? ' vai izveidojiet jaunu' : ''}.</p>${pre === NEWV ? '' : newBtn('id="impMk"')}` : '')}
+    ${newBox('impNew', r._new != null ? r._new : shortAdr(r.dati && r.dati.adrese), pre === NEWV)}
     <div class="card">${kadHtml(r.dati)}</div>
     <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="impSave">Saglabāt mājas lietā</button></div>`);
   s.parentNode.dataset.keep = '1';
-  s.querySelectorAll('[data-park]').forEach(b => b.onclick = () => { const g = (r.dati.grupas || [])[+b.dataset.park]; if (!g) return; g.park = !gPark(g); impPreview(r, $('impObj').value); });
-  if ($('impSug')) $('impSug').onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return; $('impObj').value = b.dataset.a; $('impSug').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
+  s.querySelectorAll('[data-park]').forEach(b => b.onclick = () => { const g = (r.dati.grupas || [])[+b.dataset.park]; if (!g) return; g.park = !gPark(g); if ($('impNew')) r._new = $('impNew').value; impPreview(r, $('impObj').value); });
+  const syncI = () => { if ($('impNewBox')) $('impNewBox').hidden = $('impObj').value !== NEWV; if ($('impMk')) $('impMk').hidden = $('impObj').value === NEWV; };
+  $('impObj').onchange = syncI;
+  if ($('impMk')) $('impMk').onclick = () => { $('impObj').value = NEWV; syncI(); $('impNew').focus(); };
+  if ($('impSug')) $('impSug').onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return; $('impObj').value = b.dataset.a; syncI(); $('impSug').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
   $('impSave').onclick = async () => {
-    const a = $('impObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
+    let a = $('impObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
+    const nn = a === NEWV ? $('impNew').value.trim() : ''; if (a === NEWV && !nn) return toast('Ierakstiet jaunā objekta adresi', 'err');
     const b = $('impSave'); busy(b, 'Saglabā…');
     const dati = JSON.parse(JSON.stringify(r.dati || {})); (dati.grupas || []).forEach(x => { delete x._i; });
-    try { const sv = await call('kadSave', { anorm: a, dati, url: S.imp.url }); closeSheet(); toast(sv && sv.stavState === 'added' ? 'Saglabāts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : sv && sv.stavState === 'off' ? 'Saglabāts · Pazemes stāvvietas šim objektam izslēgtas — nemainīts' : 'Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+    try { if (nn) { a = await mkObj(nn); } const sv = await call('kadSave', { anorm: a, dati, url: S.imp.url }); closeSheet(); toast(sv && sv.stavState === 'added' ? 'Saglabāts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : sv && sv.stavState === 'off' ? 'Saglabāts · Pazemes stāvvietas šim objektam izslēgtas — nemainīts' : 'Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
 }
 /* Safari poga: kadastrs.lv logs (opener) sūta lapas tekstu. Pārbauda, ka ziņa tiešām no kadastrs.lv */
