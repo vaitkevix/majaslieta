@@ -235,9 +235,12 @@ function kadHtml(d) {
 const isPark = (x) => /auto\s*st[āa]v|st[āa]vviet|garā[žz]|garaz|auto\s*novietn|transportlīdzekļ|brauktuv|\b124[12]\b/i.test(String(x || ''));   // «ratiņu novietne» NAV stāvvieta
 function parkHtml(G, T) {
   if (!G.length && !T.length) return '';
-  const gm = G.reduce((a, g) => a + (+g.m2 || 0), 0), tm = T.reduce((a, t) => a + (+t.m2 || 0), 0), vietas = G.length + T.filter(t => /viet|garā[žz]/i.test(t.nosaukums)).reduce((a, t) => a + (+t.skaits || 1), 0);
+  const r1 = (x) => Math.round(x * 10) / 10, sum = (L) => L.reduce((a, t) => a + (+t.m2 || 0), 0);
+  const under = T.filter(t => t.zona === 'Pagrabs'), over = T.filter(t => t.zona !== 'Pagrabs'), gm = sum(G);
+  const tiles = [G.length ? ['Telpu grupas', G.length + ' · ' + nf(r1(gm)) + ' m²'] : null, under.length ? ['Pazemē, m²', nf(r1(sum(under)))] : null,
+    over.length ? ['Virszemē, m²', nf(r1(sum(over)))] : null, ['Kopā, m²', nf(r1(gm + sum(T)))]].filter(Boolean);
   return `<div class="bld card clay" style="padding:14px;margin-top:12px"><h3>Autostāvvietas</h3>
-    <div class="kv">${vietas ? `<div><span>Telpu grupas / vietas</span><b>${vietas}</b></div>` : ''}<div><span>Kopējā platība, m²</span><b>${nf(Math.round((gm + tm) * 10) / 10)}</b></div></div>
+    <div class="kv">${tiles.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
     ${G.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">m²</th></tr></thead><tbody>${
       G.map(g => `<tr><td><b style="display:block">${esc(g.nosaukums || 'Telpu grupa')}</b><small style="color:var(--ink3);font-weight:700">${esc([g.apz, g.lv].filter(Boolean).join(' · '))}</small></td><td class="r">${g.m2 ? nf(g.m2) : '—'}</td></tr>`).join('')}</tbody></table></div>` : ''}
     ${T.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Koplietošanas telpa</th><th class="r">Skaits</th><th class="r">m²</th></tr></thead><tbody>${
