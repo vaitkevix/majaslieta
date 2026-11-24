@@ -188,13 +188,13 @@ function render() {
 function renderList() {
   const O = S.D.objects, q = S.q.toLowerCase();
   const L = O.filter(o => !q || (o.adrese + ' ' + (o.kad_nr || '') + ' ' + (o.grupa || '')).toLowerCase().indexOf(q) !== -1);
-  const withKad = O.filter(o => o.kad_nr).length;
+  const withKad = O.filter(o => o.kad_nr || o.kad_t).length;
   $('view').innerHTML = `<h1 class="pt">Objekti</h1>
     <div class="search"><input id="q" type="search" placeholder="Meklēt adresi vai kadastra nr." value="${esc(S.q)}" aria-label="Meklēt"></div>
     <p class="meta" style="margin:0 0 10px 4px">${O.length} objekti · ar kadastra datiem ${withKad}</p>
     <div class="list">${L.slice(0, 300).map(o => `<button class="obj" data-a="${esc(o.anorm)}"><span class="n">${HOUSE}</span>
       <span class="tx"><b>${esc(o.adrese)}</b><span>${esc(o.grupa || '')}${o.vaditajs ? ' · ' + esc(o.vaditajs) : ''}</span></span>
-      ${o.kad_nr ? `<span class="chip ok">${esc(o.kad_nr)}</span>` : '<span class="chip">nav kadastra</span>'}${o.docs ? `<span class="chip">${o.docs} dok.</span>` : ''}</button>`).join('') || '<div class="empty">Nekas nav atrasts</div>'}</div>`;
+      ${o.kad_nr || o.kad_t ? `<span class="chip ok">${o.kad_nr ? esc(o.kad_nr) : 'Kadastrs ✓'}</span>` : '<span class="chip">nav kadastra</span>'}${o.docs ? `<span class="chip">${o.docs} dok.</span>` : ''}</button>`).join('') || '<div class="empty">Nekas nav atrasts</div>'}</div>`;
   const qi = $('q'); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderList(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); };
   $('view').querySelector('.list').onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) openObj(b.dataset.a); };
 }
@@ -232,7 +232,7 @@ function kadHtml(d) {
 function paneKad() {
   const R = S.obj, k = R.kad, p = $('opane');
   p.innerHTML = k ? `<div class="card">${kadHtml(k.dati)}<p class="meta">Atjaunots ${esc(k.atjaunots)}${k.kas ? ' · ' + esc(k.kas) : ''}${k.avots ? ` · <a href="${esc(k.avots)}" target="_blank" rel="noopener" style="color:inherit">avots kadastrs.lv</a>` : ''}</p></div>`
-    : `<div class="card clay"><b style="font-size:16px">Kadastra datu vēl nav</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px">Atveriet šī objekta lapu kadastrs.lv Safari un spiediet grāmatzīmi «SH → Mājas lieta». Vai ielīmējiet lapas tekstu šeit.</p></div>`;
+    : `<div class="card clay"><b style="font-size:16px">Kadastra datu vēl nav</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px">Atveriet šī objekta lapu kadastrs.lv (Meklēt būves → būve) un spiediet grāmatzīmi «SH Kadastrs» → «Atvērt Mājas lietā». Vai ielīmējiet lapas tekstu šeit.</p></div>`;
   if (can('vaditajs')) p.insertAdjacentHTML('beforeend', `<div class="sec"><span></span><div class="chips"><button id="kNew">Ielīmēt tekstu no kadastra</button><button id="kHow">Safari poga</button></div></div>`);
   if ($('kNew')) { $('kNew').onclick = () => impSheet('', '', '', R.obj.anorm); $('kHow').onclick = () => { S.obj = null; S.tab = 'poga'; render(); }; }
 }
