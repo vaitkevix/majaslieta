@@ -59,7 +59,7 @@ button{cursor:pointer}
 .kv div{padding:12px 14px;border-radius:18px;background:var(--surf2);min-width:0}
 .kv span{display:block;font-size:12px;font-weight:800;color:var(--ink3)}.kv b{display:block;font-size:16px;font-weight:800;overflow-wrap:anywhere}
 .tw{overflow-x:auto;margin-top:2px}.tb{width:100%;border-collapse:collapse;font-size:14px}.tb th{text-align:left;font-size:12px;font-weight:800;color:var(--ink3);padding:8px 10px;border-bottom:1px solid var(--line,rgba(0,0,0,.1))}.tb td{padding:9px 10px;border-bottom:1px solid var(--line,rgba(0,0,0,.06));font-weight:600}.tb .r{text-align:right;white-space:nowrap}.tb tfoot td{font-weight:800;border-bottom:0}
-.pk{display:inline-flex;margin-top:6px;min-height:32px;padding:0 12px;border:0;border-radius:999px;background:var(--surf2);font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}.pk.on{background:var(--dark);color:var(--ondark)}
+.pk{display:flex;align-items:center;gap:7px;width:max-content;margin-top:8px;min-height:36px;padding:0 14px 0 8px;border:0;border-radius:999px;background:var(--surf2);color:var(--ink);font:inherit;font-size:13px;font-weight:800;cursor:pointer}.pk::before{content:'+';display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--surf);color:var(--ink3);font-size:14px;line-height:1}.pk.on{background:var(--dark);color:var(--ondark)}.pk.on::before{content:'✓';background:var(--ondark);color:var(--dark);font-size:11px}
 .bld{margin-top:10px}.bld h3{margin:0 0 8px;font-size:16px;font-weight:800}
 .meta{font-size:12.5px;font-weight:700;color:var(--ink3);margin-top:10px}
 .hist{display:flex;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surf)}
@@ -606,7 +606,7 @@ function telpasTbl1(T, title) {
 }
 /* Telpu grupa ir autostāvvieta: nosaukums/veids, telpas grupā (no pogas) vai atzīmēts ar roku (park true/false) */
 const gPark = (g) => g.park === true || (g.park !== false && (isPark(g.nosaukums + ' ' + g.lv) || (Array.isArray(g.telpas_n) && g.telpas_n.some(isPark))));
-const parkBtn = (g, on) => S.kadEdit && g._i != null ? `<button class="pk ${on ? 'on' : ''}" data-park="${g._i}" title="${on ? 'Nav autostāvvieta' : 'Atzīmēt kā autostāvvietu'}">🚗 ${on ? 'Noņemt' : 'Autostāvvieta'}</button>` : '';
+const parkBtn = (g, on) => S.kadEdit && g._i != null ? `<button class="pk ${on ? 'on' : ''}" data-park="${g._i}" title="${on ? 'Noņemt atzīmi — nav autostāvvieta' : 'Atzīmēt kā autostāvvietu'}">Autostāvvieta</button>` : '';
 function grupasTbl(G) {
   if (!G.length) return '';
   return `<div class="bld"><h3>Citas telpu grupas</h3><div class="tw"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">Platība, m²</th></tr></thead><tbody>${
