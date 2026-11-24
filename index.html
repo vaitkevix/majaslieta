@@ -321,25 +321,58 @@ function waitKad() {
 }
 
 /* ---------- Safari poga (bookmarklet) ---------- */
-const BM = "javascript:(function(){var T=(document.body.innerText||'').slice(0,60000),D={sh:'ml-kad',url:location.href,title:document.title,text:T};try{navigator.clipboard.writeText(T)}catch(e){}var ok=0;addEventListener('message',function(e){if(e.origin!=='https://vaitkevix.cloud'||!e.data)return;if(e.data.sh==='ml-ready'&&!ok)e.source.postMessage(D,'https://vaitkevix.cloud');if(e.data.sh==='ml-got')ok=1});var w=window.open('https://vaitkevix.cloud/sh/#ml/imp','_blank');if(!w)alert('SH Mājas lieta: atļaujiet uznirstošos logus kadastrs.lv vai ielīmējiet tekstu (tas jau nokopēts).')})()";
+const BM = "javascript:(function(){var s=document.createElement('script');s.src='https://vaitkevix.github.io/budzets/kadastrs.js?'+Date.now();document.body.appendChild(s)})()";   // tā pati «SH Kadastrs» poga, kas Budžetā
 function renderPoga() {
   $('view').innerHTML = `<h1 class="pt">Safari poga</h1>
-    <div class="card clay" style="margin:0 0 12px"><b style="font-size:16px">Kā tas strādā</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px;line-height:1.5">Atverat objekta lapu <b>kadastrs.lv</b> (ar savu kontu), nospiežat grāmatzīmi <b>«SH → Mājas lieta»</b>. Atveras portāls, AI nolasa kadastra datus, jūs izvēlaties objektu un saglabājat.</p></div>
+    <div class="card clay" style="margin:0 0 12px"><b style="font-size:16px">Kā tas strādā</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px;line-height:1.5">Tā pati grāmatzīme <b>«SH Kadastrs»</b>, kas Budžetā. Atverat būvi <b>kadastrs.lv</b> (ar Smart-ID), nospiežat grāmatzīmi, pagaidāt, kamēr nolasa, un spiežat <b>«Atvērt Mājas lietā»</b>. Izvēlaties objektu un saglabājat.</p></div>
     <div class="card" style="margin:0 0 12px"><b style="font-size:16px">1. Pievienojiet pogu Safari (Mac)</b>
       <ol class="steps" style="margin-top:8px"><li>Ieslēdziet izlases joslu: <b>Skats → Rādīt izlases joslu</b> (⇧⌘B).</li><li>Ievelciet šo pogu izlases joslā:</li></ol>
-      <p style="margin:10px 0"><a class="bm" id="bm" href="#" onclick="return false" draggable="true">${HOUSE} SH → Mājas lieta</a></p>
-      <p class="meta">Ja ievilkt neizdodas: pievienojiet jebkuru lapu izlasei (⌘D), tad <b>Grāmatzīmes → Rediģēt grāmatzīmes</b>, nosaukums «SH → Mājas lieta», adreses vietā ielīmējiet kodu:</p>
+      <p style="margin:10px 0"><a class="bm" id="bm" href="#" onclick="return false" draggable="true">${HOUSE} SH Kadastrs</a></p>
+      <p class="meta">Ja ievilkt neizdodas: pievienojiet jebkuru lapu izlasei (⌘D), tad <b>Grāmatzīmes → Rediģēt grāmatzīmes</b>, nosaukums «SH Kadastrs», adreses vietā ielīmējiet kodu:</p>
       <textarea class="code" id="bmCode" readonly></textarea>
       <div class="chips" style="margin-top:8px"><button id="bmCopy">Kopēt kodu</button></div></div>
     <div class="card" style="margin:0 0 12px"><b style="font-size:16px">iPhone / iPad</b>
-      <ol class="steps" style="margin-top:8px"><li>Safari pievienojiet jebkuru lapu grāmatzīmēm.</li><li><b>Grāmatzīmes → Rediģēt</b> → šī grāmatzīme → adresē ielīmējiet kodu (nokopējiet ar pogu augstāk).</li><li>kadastrs.lv lapā atveriet grāmatzīmes un pieskarieties «SH → Mājas lieta».</li></ol></div>
-    <div class="card"><b style="font-size:16px">2. Lietošana</b><ol class="steps" style="margin-top:8px"><li>kadastrs.lv atveriet objektu (būves vai zemes vienības lapu ar datiem).</li><li>Spiediet <b>SH → Mājas lieta</b>. Teksts tiek arī nokopēts starpliktuvē.</li><li>Ja portāls atvērās bez datiem — spiediet <b>Ielīmēt</b> (⌘V) logā «Dati no kadastra».</li></ol></div>`;
+      <ol class="steps" style="margin-top:8px"><li>Safari pievienojiet jebkuru lapu grāmatzīmēm.</li><li><b>Grāmatzīmes → Rediģēt</b> → šī grāmatzīme → adresē ielīmējiet kodu (nokopējiet ar pogu augstāk).</li><li>kadastrs.lv lapā atveriet grāmatzīmes un pieskarieties «SH Kadastrs».</li></ol></div>
+    <div class="card"><b style="font-size:16px">2. Lietošana</b><ol class="steps" style="margin-top:8px"><li>kadastrs.lv ar Smart-ID: <b>Meklēt būves</b> → atveriet būvi.</li><li>Spiediet <b>SH Kadastrs</b> — labajā augšā parādās lodziņš, gaidiet «Gatavs ✓».</li><li>Spiediet <b>Atvērt Mājas lietā</b>, pārbaudiet objektu un <b>Saglabāt</b>.</li></ol></div>`;
   $('bm').setAttribute('href', BM); $('bmCode').value = BM;
   $('bm').onclick = (e) => { e.preventDefault(); toast('Ievelciet pogu izlases joslā — nespiediet šeit'); };
   $('bmCopy').onclick = async () => { try { await navigator.clipboard.writeText(BM); toast('Kods nokopēts'); } catch (e) { $('bmCode').select(); document.execCommand('copy'); toast('Kods nokopēts'); } };
 }
 
+/* «SH Kadastrs» poga (tā pati, kas Budžetā) atver #ml/kadastrs=<base64url JSON> */
+function kadFromBtn(k) {
+  const L = (Array.isArray(k) ? k : [k]).filter(Boolean); if (!L.length) return null;
+  const f = L[0], n = (v) => v == null || v === '' ? 0 : +v || 0, sum = (key) => L.reduce((s, x) => s + n(x[key]), 0);
+  const telp = {}; L.forEach(x => (x.telpas || []).forEach(t => { const e = telp[t.nosaukums] || (telp[t.nosaukums] = { m2: 0, sk: 0 }); e.m2 += n(t.m2); e.sk += n(t.skaits); }));
+  const citi = {};
+  if (sum('dzivoklu_m2')) citi['Dzīvokļu platība, m²'] = Math.round(sum('dzivoklu_m2') * 10) / 10;
+  if (sum('kopl_iek')) citi['Koplietošanas iekštelpas, m²'] = Math.round(sum('kopl_iek') * 10) / 10;
+  if (sum('kopl_ar')) citi['Koplietošanas ārtelpas, m²'] = Math.round(sum('kopl_ar') * 10) / 10;
+  const tl = Object.keys(telp).sort((a, b) => telp[b].m2 - telp[a].m2).map(x => x + ' ' + (Math.round(telp[x].m2 * 10) / 10) + ' m²' + (telp[x].sk > 1 ? ' (×' + telp[x].sk + ')' : ''));
+  if (tl.length) citi['Koplietošanas telpas'] = tl.join('; ').slice(0, 1500);
+  const cg = []; L.forEach(x => (x.citas_grupas || []).forEach(g => cg.push((g.nosaukums || g.lv || g.apz) + (g.m2 ? ' ' + g.m2 + ' m²' : ''))));
+  if (cg.length) citi['Citas telpu grupas'] = cg.join('; ').slice(0, 1000);
+  return { kadastra_nr: '', adrese: L.map(x => x.adrese).filter(Boolean).join('; '), nosaukums: f.nosaukums_buvei || '',
+    zeme: { apzimejums: f.zeme_apz || '', platiba_m2: n(f.zeme_m2), lietosanas_merkis: '' },
+    buves: L.map(x => ({ apzimejums: x.buve || '', nosaukums: x.nosaukums_buvei || '', lietosanas_veids: x.tips || '', virszemes_stavi: n(x.stavi), pazemes_stavi: n(x.pazemes),
+      kopplatiba_m2: n(x.kopeja), apbuves_laukums_m2: n(x.apbuve), buvtilpums_m3: 0, dzivokli: n(x.dzivokli), telpu_grupas: n(x.dzivokli) + (x.citas_grupas || []).length,
+      ekspluatacijas_gads: n(x.gads), arsienu_materials: '', jumta_segums: '', nolietojums_proc: 0 })),
+    kadastrala_vertiba_eur: 0, vertibas_datums: '', citi };
+}
+function kadHash() {
+  const m = location.hash.match(/^#kadastrs=([A-Za-z0-9_-]+)/); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let dati; try { dati = kadFromBtn(JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')))))); } catch (e) { return toast('Neizdevās nolasīt kadastra datus', 'err'); }
+  if (!dati) return;
+  const go = async () => { if (!can('vaditajs')) return toast('Jums ir tikai skatīšanās tiesības', 'err');
+    S.imp = { url: 'https://www.kadastrs.lv', title: dati.adrese, anorm: '' };
+    try { impPreview(await call('kadParse', { dati })); } catch (e) { toast(e.message, 'err'); } };
+  if (S.D) go(); else { const t = setInterval(() => { if (S.D) { clearInterval(t); go(); } }, 300); }
+}
+addEventListener('hashchange', kadHash);
+
 /* ---------- start ---------- */
+kadHash();
 const IMP = /^#imp\b/.test(location.hash);
 if (IMP) { history.replaceState(null, '', location.pathname + location.search); waitKad(); }
 if (S.pin) load().catch(e => showGate(e.code === 'auth' ? e.message : e.message)); else showGate('');
