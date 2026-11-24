@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="lv" data-sh="ml">
+<head>
+<meta charset="utf-8">
+<script>/*SH viena saite: lietotne strādā tikai portālā vaitkevix.cloud/sh. © VAITKEVIX, SIA*/(function(){try{if(window.top!==window)return}catch(e){return}if(/^(localhost|127\.|sh\.test)/.test(location.hostname)||location.protocol==='file:')return;var h=location.hash.slice(1);location.replace('https://vaitkevix.cloud/sh/#ml'+(h?'/'+h:''))})()</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f1f4f2">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('sh_theme')==='dark'?'dark':'light'}catch(e){}</script>
+<title>SH | Mājas lieta</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<!-- SH | Mājas lieta — kadastra dati (no kadastrs.lv ar Safari pogu), dokumenti un visu lietotņu darbu vēsture vienuviet. © VAITKEVIX, SIA -->
+<style>
+:root{--bg:#f1f4f2;--surf:#fff;--surf2:#f3f5f4;--ink:#17201c;--ink2:#4a534f;--ink3:#6d7672;--dark:#17201c;--ondark:#fff;
+  --mint:#d6e8e1;--sand:#f4e4b4;--sky:#d8e6f2;--rose:#f5dbe3;--lilac:#e2ddf2;--clay:#eadfd3;--ok:#2f5d45;--warn:#6b4a00;--bad:#8a2a3b}
+:root[data-theme="dark"]{--bg:#0b120f;--surf:#151d1a;--surf2:#1b2521;--ink:#eef2ef;--ink2:#b4bdb8;--ink3:#8b958f;--dark:#eef2ef;--ondark:#0b120f;
+  --mint:#1e3a32;--sand:#3d3520;--sky:#1e2f3d;--rose:#3d2530;--lilac:#2c2840;--clay:#3a3027;--ok:#8fd1ad;--warn:#f0c46b;--bad:#f3a0b0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.top .t{flex:1;min-width:0}
+.top small{display:block;font-size:13px;font-weight:700;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .lg{width:44px;height:44px;border-radius:14px;background:var(--clay);color:var(--ink);display:grid;place-items:center;flex:none}
+.top .bn{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(17px,4.6vw,20px);font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.pt{margin:0 0 14px;font-size:clamp(26px,4vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.05;overflow-wrap:anywhere}
+.ib{width:44px;height:44px;border-radius:50%;border:0;background:var(--surf);display:grid;place-items:center;flex:none;color:var(--ink)}
+.ib.dk{background:var(--dark);color:var(--ondark)}
+.card{border-radius:28px;background:var(--surf);padding:16px 18px}
+.clay{background:var(--clay)}.mint{background:var(--mint)}.sand{background:var(--sand)}.sky{background:var(--sky)}.lilac{background:var(--lilac)}.rose{background:var(--rose)}
+.sec{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:20px 0 10px;flex-wrap:wrap}
+.sec h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--surf);font-size:14px;font-weight:800;text-decoration:none;color:var(--ink);white-space:nowrap}
+.pill.dk{background:var(--dark);color:var(--ondark)}
+.pill.big{min-height:56px;padding:0 22px;font-size:16px}
+.seg{display:flex;gap:6px;padding:6px;border-radius:999px;background:var(--surf);overflow-x:auto;scrollbar-width:none;margin:0 0 14px}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1 0 auto;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:transparent;font-size:14px;font-weight:800;white-space:nowrap}
+.seg button.on{background:var(--dark);color:var(--ondark)}
+.list{display:flex;flex-direction:column;gap:8px}
+.obj{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surf);border:0;width:100%;text-align:left;color:var(--ink)}
+.obj .n{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--clay)}
+.obj .tx{flex:1;min-width:0}.obj b{display:block;font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.obj span{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{flex:none;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:var(--surf2);white-space:nowrap}
+.chip.ok{background:var(--mint);color:var(--ok)}.chip.w{background:var(--sand);color:var(--warn)}.chip.bad{background:var(--rose);color:var(--bad)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips button{min-height:40px;padding:0 14px;border:0;border-radius:999px;background:var(--surf);font-size:13px;font-weight:800}
+.chips button.on{background:var(--dark);color:var(--ondark)}
+.search{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.search input{flex:1 1 220px;height:48px;border:0;border-radius:999px;background:var(--surf);padding:0 18px;font-size:16px;font-weight:700;min-width:0}
+.empty{padding:28px 18px;text-align:center;font-weight:700;color:var(--ink3)}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.card .f input,.card .f select,.card .f textarea,.doc .pill,.hist .chip{background:var(--surf2)}
+.kv div{padding:12px 14px;border-radius:18px;background:var(--surf2);min-width:0}
+.kv span{display:block;font-size:12px;font-weight:800;color:var(--ink3)}.kv b{display:block;font-size:16px;font-weight:800;overflow-wrap:anywhere}
+.bld{margin-top:10px}.bld h3{margin:0 0 8px;font-size:16px;font-weight:800}
+.meta{font-size:12.5px;font-weight:700;color:var(--ink3);margin-top:10px}
+.hist{display:flex;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surf)}
+.hist .d{flex:none;width:56px;font-size:13px;font-weight:800;color:var(--ink2)}.hist .d small{display:block;font-size:11px;color:var(--ink3)}
+.hist .tx{flex:1;min-width:0}.hist b{display:block;font-size:14px;font-weight:800}.hist span{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);overflow-wrap:anywhere}
+.hist .ph{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.hist .ph img{width:52px;height:52px;border-radius:12px;object-fit:cover;background:var(--surf2)}
+.hist.plan{opacity:.7}
+.doc{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:20px;background:var(--surf)}
+.doc .n{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--clay);font-size:11px;font-weight:800}
+.doc .tx{flex:1;min-width:0}.doc b{display:block;font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.doc span{display:block;font-size:12px;font-weight:700;color:var(--ink2)}
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;width:min(420px,calc(100% - 32px));display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;padding:6px;border-radius:999px;background:var(--surf);box-shadow:0 10px 30px rgba(8,20,16,.14)}
+.tabs button{min-height:48px;border:0;border-radius:999px;background:transparent;font-size:13.5px;font-weight:800}
+.tabs button.on{background:var(--dark);color:var(--ondark)}
+.sheet-bg{position:fixed;inset:0;z-index:50;background:rgba(8,20,16,.45);display:flex;align-items:flex-end;justify-content:center}
+@media(min-width:700px){.sheet-bg{align-items:center}}
+.sheet{width:min(640px,100%);max-height:92vh;overflow:auto;background:var(--bg);border-radius:28px 28px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+@media(min-width:700px){.sheet{border-radius:28px}}
+.sheet .hd{display:flex;align-items:center;gap:10px;margin:0 0 14px}.sheet .hd h3{margin:0;flex:1;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.f{margin:0 0 12px}.f label,.f .lb{display:block;font-size:13px;font-weight:800;color:var(--ink2);margin:0 0 6px 4px}
+.f input,.f select,.f textarea{width:100%;height:48px;border:0;border-radius:16px;background:var(--surf);padding:0 16px;font-size:16px;font-weight:700}
+.f textarea{height:auto;min-height:160px;padding:12px 16px;font-size:14px;font-weight:600}
+.acts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px;margin-top:14px}
+.acts button{min-height:56px;border:0;border-radius:999px;font-size:16px;font-weight:800}
+.btn-dk{background:var(--dark);color:var(--ondark)}.btn-lt{background:var(--surf)}
+.steps{margin:0;padding:0 0 0 20px;font-size:14.5px;font-weight:600;line-height:1.55;color:var(--ink2)}.steps b{color:var(--ink)}
+.bm{display:inline-flex;align-items:center;gap:8px;min-height:52px;padding:0 20px;border-radius:999px;background:var(--dark);color:var(--ondark);font-weight:800;text-decoration:none;cursor:grab}
+.code{display:block;width:100%;min-height:90px;border:0;border-radius:16px;background:var(--surf2);padding:12px;font:600 12px/1.45 ui-monospace,Menlo,monospace;color:var(--ink2);word-break:break-all;resize:none}
+.note{padding:12px 14px;border-radius:18px;background:var(--sand);font-size:13.5px;font-weight:700;color:var(--warn);margin:0 0 12px}
+.gate{min-height:100vh;display:grid;place-items:center;padding:20px}
+.gate .card{width:min(380px,100%);text-align:center;padding:28px 22px}
+.gate input{width:100%;height:56px;border:0;border-radius:18px;background:var(--surf2);text-align:center;font-size:22px;font-weight:800;margin:14px 0 10px}
+.gate .err{min-height:20px;color:var(--bad);font-weight:700;font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;max-width:calc(100% - 32px);padding:12px 18px;border-radius:999px;background:var(--dark);color:var(--ondark);font-weight:800;font-size:14px}
+.toast.err{background:#8a2a3b;color:#fff}
+.skel{height:64px;border-radius:22px;background:var(--surf);opacity:.6;margin-bottom:8px}
+.copy{text-align:center;font-size:11px;font-weight:700;color:var(--ink3);margin:24px 0 0}
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;font-weight:800;color:var(--ink2);padding:0;min-height:40px;margin:0 0 4px}
+</style>
+</head>
+<body>
+<section class="gate" id="vGate" hidden>
+  <form class="card" id="gateForm">
+    <h2 style="margin:0;font-size:22px;font-weight:800">SH | Mājas lieta</h2>
+    <p style="margin:4px 0 0;color:var(--ink3);font-weight:700;font-size:14px">Ienāciet ar savu portāla PIN</p>
+    <input id="gPin" type="password" inputmode="text" autocomplete="current-password" placeholder="PIN" aria-label="PIN">
+    <div class="err" id="gErr"></div>
+    <button class="pill dk big" style="width:100%" type="submit">Ienākt</button>
+    <p class="copy">© VAITKEVIX, SIA</p>
+  </form>
+</section>
+
+<main class="wrap" id="vApp" hidden>
+  <header class="top">
+    <span class="lg" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11.5h14V9"/><path d="M9.5 20.5v-5h5v5"/></svg></span>
+    <div class="t"><b class="bn">Mājas lieta</b><small id="hdSub">Kadastrs · dokumenti · darbi</small></div>
+    <button class="ib" id="btnImp" aria-label="Ielīmēt no kadastra" title="Ielīmēt no kadastra"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M12 11v6M9 14l3 3 3-3"/></svg></button>
+    <button class="ib" id="btnRefresh" aria-label="Atjaunot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+  </header>
+  <div id="view"></div>
+  <p class="copy">© VAITKEVIX, SIA</p>
+</main>
+<nav class="tabs" id="tabs" hidden>
+  <button data-tab="list" class="on">Objekti</button>
+  <button data-tab="poga">Safari poga</button>
+</nav>
+
+<script>
+'use strict';
+const API = 'https://vaitkevix.cloud/sh/api/ml', PINK = 'shd_pin';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+const S = { pin: ls.get(PINK) || '', tab: 'list', q: '', D: null, obj: null, otab: 'kad', hf: '', imp: null };
+const RW = { admin: 3, vaditajs: 2, skatitajs: 0 };
+const can = (r) => (RW[(S.D && S.D.me.role) || ''] || 0) >= RW[r];
+const lvS = (d) => /^\d{4}-\d{2}-\d{2}/.test(d || '') ? (+d.slice(8, 10)) + '.' + d.slice(5, 7) + '.' : esc(d || '');
+const nf = (n, f) => (+n).toLocaleString('lv-LV', { maximumFractionDigits: f == null ? 2 : f });
+const kb = (n) => n > 1e6 ? nf(n / 1e6, 1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB';
+const HOUSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11.5h14V9"/><path d="M9.5 20.5v-5h5v5"/></svg>';
+const X = '<button class="ib" data-x aria-label="Aizvērt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
+
+/* tēma kopā ar portālu */
+addEventListener('storage', e => { if (e.key === 'sh_theme') document.documentElement.dataset.theme = e.newValue === 'dark' ? 'dark' : 'light'; });
+addEventListener('message', e => { const m = e.data; if (e.origin === location.origin && m && m.sh === 'theme') document.documentElement.dataset.theme = m.t === 'dark' ? 'dark' : 'light'; });
+
+function toast(t, kind) { document.querySelectorAll('.toast').forEach(x => x.remove()); const el = document.createElement('div'); el.className = 'toast' + (kind === 'err' ? ' err' : ''); el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 3400); }
+const NET = 'Nav interneta vai vājš signāls — mēģiniet vēlreiz';
+async function call(action, data, raw) {
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), /kadParse|docUpload|docGet/.test(action) ? 120000 : 25000);
+  let r; try { r = await fetch(API, { method: 'POST', signal: ac.signal, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action, pin: S.pin }, data || {})) }); }
+  catch (e) { const er = new Error(NET); er.code = 'net'; throw er; } finally { clearTimeout(tm); }
+  if (raw && r.ok && !/json/.test(r.headers.get('content-type') || '')) return r;
+  const j = await r.json().catch(() => ({ ok: false, error: 'Serveris neatbild — mēģiniet vēlreiz' }));
+  if (!j.ok) { const e = new Error(j.error || 'Kļūda'); e.code = j.code; throw e; }
+  return j;
+}
+function sheet(html) { closeSheet(); const b = document.createElement('div'); b.className = 'sheet-bg'; b.id = 'sheetBg'; b.innerHTML = `<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;
+  b.addEventListener('click', e => { if (e.target.closest('[data-x]') || (e.target === b && !b.dataset.keep)) closeSheet(); }); document.body.appendChild(b); return b.firstChild; }
+function closeSheet() { const b = $('sheetBg'); if (b) b.remove(); }
+const busy = (b, t) => { b.disabled = true; b.dataset.t = b.textContent; b.textContent = t; };
+const unbusy = (b) => { b.disabled = false; if (b.dataset.t) b.textContent = b.dataset.t; };
+
+/* ---------- ieeja ---------- */
+function showGate(msg) { $('vApp').hidden = true; $('tabs').hidden = true; $('vGate').hidden = false; $('gErr').textContent = msg || ''; setTimeout(() => $('gPin').focus(), 100); }
+$('gateForm').onsubmit = async (e) => { e.preventDefault(); S.pin = $('gPin').value.trim(); if (!S.pin) return; try { await load(); ls.set(PINK, S.pin); } catch (err) { showGate(err.message); } };
+async function load() {
+  if (!S.D) $('view').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  S.D = await call('boot');
+  $('vGate').hidden = true; $('vApp').hidden = false; $('tabs').hidden = false;
+  $('hdSub').textContent = S.D.me.name + ' · ' + ({ admin: 'Administrators', vaditajs: 'Pieteicējs', skatitajs: 'Skatītājs' }[S.D.me.role] || '');
+  $('btnImp').hidden = !can('vaditajs');
+  render();
+}
+$('btnRefresh').onclick = async () => { try { await load(); if (S.obj) await openObj(S.obj.obj.anorm); toast('Atjaunots'); } catch (e) { toast(e.message, 'err'); } };
+$('tabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.obj = null; render(); scrollTo(0, 0); };
+$('btnImp').onclick = () => impSheet('', '', '');
+
+function render() {
+  $('tabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  if (S.obj) return renderObj();
+  if (S.tab === 'poga') return renderPoga();
+  renderList();
+}
+
+/* ---------- objektu saraksts ---------- */
+function renderList() {
+  const O = S.D.objects, q = S.q.toLowerCase();
+  const L = O.filter(o => !q || (o.adrese + ' ' + (o.kad_nr || '') + ' ' + (o.grupa || '')).toLowerCase().indexOf(q) !== -1);
+  const withKad = O.filter(o => o.kad_nr).length;
+  $('view').innerHTML = `<h1 class="pt">Objekti</h1>
+    <div class="search"><input id="q" type="search" placeholder="Meklēt adresi vai kadastra nr." value="${esc(S.q)}" aria-label="Meklēt"></div>
+    <p class="meta" style="margin:0 0 10px 4px">${O.length} objekti · ar kadastra datiem ${withKad}</p>
+    <div class="list">${L.slice(0, 300).map(o => `<button class="obj" data-a="${esc(o.anorm)}"><span class="n">${HOUSE}</span>
+      <span class="tx"><b>${esc(o.adrese)}</b><span>${esc(o.grupa || '')}${o.vaditajs ? ' · ' + esc(o.vaditajs) : ''}</span></span>
+      ${o.kad_nr ? `<span class="chip ok">${esc(o.kad_nr)}</span>` : '<span class="chip">nav kadastra</span>'}${o.docs ? `<span class="chip">${o.docs} dok.</span>` : ''}</button>`).join('') || '<div class="empty">Nekas nav atrasts</div>'}</div>`;
+  const qi = $('q'); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderList(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); };
+  $('view').querySelector('.list').onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) openObj(b.dataset.a); };
+}
+
+/* ---------- objekta lieta ---------- */
+async function openObj(a) {
+  try { const r = await call('obj', { anorm: a }); S.obj = r; render(); scrollTo(0, 0); } catch (e) { toast(e.message, 'err'); }
+}
+function renderObj() {
+  const R = S.obj, o = R.obj;
+  $('view').innerHTML = `<button class="back" id="back">‹ Visi objekti</button><h1 class="pt">${esc(o.adrese)}</h1>
+    <div class="seg" id="otab">${[['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Darbu vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div id="opane"></div>`;
+  $('back').onclick = () => { S.obj = null; render(); };
+  $('otab').onclick = (e) => { const b = e.target.closest('[data-o]'); if (b) { S.otab = b.dataset.o; renderObj(); } };
+  ({ kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
+}
+
+const KL = { kadastra_nr: 'Kadastra numurs', adrese: 'Adrese', nosaukums: 'Nosaukums', kadastrala_vertiba_eur: 'Kadastrālā vērtība, €', vertibas_datums: 'Vērtības datums' };
+const ZL = { apzimejums: 'Zemes vienības apzīmējums', platiba_m2: 'Zemes platība, m²', lietosanas_merkis: 'Lietošanas mērķis' };
+const BL = { apzimejums: 'Apzīmējums', lietosanas_veids: 'Lietošanas veids', virszemes_stavi: 'Virszemes stāvi', pazemes_stavi: 'Pazemes stāvi', kopplatiba_m2: 'Kopplatība, m²', apbuves_laukums_m2: 'Apbūves laukums, m²',
+  buvtilpums_m3: 'Būvtilpums, m³', dzivokli: 'Dzīvokļi', telpu_grupas: 'Telpu grupas', ekspluatacijas_gads: 'Ekspluatācijā', arsienu_materials: 'Ārsienas', jumta_segums: 'Jumta segums', nolietojums_proc: 'Nolietojums, %' };
+const val = (v, k) => v == null || v === '' ? null : typeof v === 'number' ? (/gads/.test(k) ? String(v) : nf(v)) : String(v);
+const kvs = (obj, L) => Object.keys(L).map(k => { const v = val(obj && obj[k], k); return v == null ? '' : `<div><span>${L[k]}</span><b>${esc(v)}</b></div>`; }).join('');
+function kadHtml(d) {
+  d = d || {};
+  const top = kvs(d, KL) + kvs(d.zeme || {}, ZL);
+  const B = (Array.isArray(d.buves) ? d.buves : []).map((b, i) => `<div class="bld card" style="padding:14px"><h3>${esc(b.nosaukums || 'Būve ' + (i + 1))}</h3><div class="kv">${kvs(b, BL) || '<div><span>Dati</span><b>—</b></div>'}</div></div>`).join('');
+  const C = d.citi && typeof d.citi === 'object' ? Object.keys(d.citi).filter(k => d.citi[k] != null && d.citi[k] !== '').slice(0, 40).map(k => `<div><span>${esc(k)}</span><b>${esc(typeof d.citi[k] === 'object' ? JSON.stringify(d.citi[k]) : d.citi[k])}</b></div>`).join('') : '';
+  return `<div class="kv">${top || '<div><span>Dati</span><b>—</b></div>'}</div>${B}${C ? `<div class="bld"><h3>Citi dati</h3><div class="kv">${C}</div></div>` : ''}`;
+}
+function paneKad() {
+  const R = S.obj, k = R.kad, p = $('opane');
+  p.innerHTML = k ? `<div class="card">${kadHtml(k.dati)}<p class="meta">Atjaunots ${esc(k.atjaunots)}${k.kas ? ' · ' + esc(k.kas) : ''}${k.avots ? ` · <a href="${esc(k.avots)}" target="_blank" rel="noopener" style="color:inherit">avots kadastrs.lv</a>` : ''}</p></div>`
+    : `<div class="card clay"><b style="font-size:16px">Kadastra datu vēl nav</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px">Atveriet šī objekta lapu kadastrs.lv Safari un spiediet grāmatzīmi «SH → Mājas lieta». Vai ielīmējiet lapas tekstu šeit.</p></div>`;
+  if (can('vaditajs')) p.insertAdjacentHTML('beforeend', `<div class="sec"><span></span><div class="chips"><button id="kNew">Ielīmēt tekstu no kadastra</button><button id="kHow">Safari poga</button></div></div>`);
+  if ($('kNew')) { $('kNew').onclick = () => impSheet('', '', '', R.obj.anorm); $('kHow').onclick = () => { S.obj = null; S.tab = 'poga'; render(); }; }
+}
+function paneDoc() {
+  const R = S.obj, p = $('opane');
+  p.innerHTML = (can('vaditajs') ? `<div class="card" style="margin:0 0 12px"><div class="f"><label for="dKind">Dokumenta veids</label><select id="dKind">${S.D.kinds.map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
+      <label class="pill dk big" style="width:100%;cursor:pointer">+ Pievienot dokumentu<input id="dFile" type="file" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" multiple hidden></label>
+      <p class="meta" style="margin:8px 4px 0">PDF, bildes, Word, Excel · līdz 15 MB</p></div>` : '') +
+    `<div class="list" id="dList">${R.docs.map(d => `<div class="doc"><span class="n">${esc((d.nosaukums.split('.').pop() || '').slice(0, 4).toUpperCase() || 'DOK')}</span>
+      <span class="tx"><b>${esc(d.nosaukums)}</b><span>${esc(d.tips)} · ${kb(d.izmers)} · ${esc(d.laiks)}${d.pievienoja ? ' · ' + esc(d.pievienoja) : ''}</span></span>
+      <button class="pill" data-open="${esc(d.id)}">Atvērt</button>${can('vaditajs') ? `<button class="ib" data-del="${esc(d.id)}" aria-label="Noņemt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>` : ''}</div>`).join('') || '<div class="empty">Dokumentu vēl nav</div>'}</div>`;
+  if ($('dFile')) $('dFile').onchange = (e) => upload(Array.from(e.target.files || []), $('dKind').value);
+  $('dList').onclick = async (e) => {
+    const o = e.target.closest('[data-open]'), d = e.target.closest('[data-del]');
+    if (o) return openDoc(o.dataset.open, R.docs.find(x => x.id === o.dataset.open));
+    if (d && confirm('Noņemt dokumentu no mājas lietas?')) { try { await call('docDel', { id: d.dataset.del }); await openObj(R.obj.anorm); toast('Noņemts'); } catch (er) { toast(er.message, 'err'); } }
+  };
+}
+const readAsData = (f) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+async function upload(files, tips) {
+  const a = S.obj.obj.anorm; let n = 0;
+  for (const f of files) {
+    if (f.size > 15e6) { toast(f.name + ': par lielu (līdz 15 MB)', 'err'); continue; }
+    toast('Augšupielādē ' + f.name + '…');
+    try { let data = await readAsData(f); if (/^data:;/.test(data) || /^data:application\/octet-stream/.test(data)) { const t = /\.docx$/i.test(f.name) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : /\.xlsx$/i.test(f.name) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : /\.pdf$/i.test(f.name) ? 'application/pdf' : ''; if (t) data = data.replace(/^data:[^;]*;/, 'data:' + t + ';'); }
+      await call('docUpload', { anorm: a, name: f.name, tips, data }); n++; } catch (e) { toast(f.name + ': ' + e.message, 'err'); }
+  }
+  if (n) { await openObj(a); S.otab = 'doc'; renderObj(); toast(n === 1 ? 'Dokuments pievienots' : n + ' dokumenti pievienoti'); }
+}
+async function openDoc(id, d) {
+  const w = window.open('', '_blank');
+  try { const r = await call('docGet', { id }, true), b = await r.blob(), u = URL.createObjectURL(b);
+    if (w) w.location.href = u; else { const a = document.createElement('a'); a.href = u; a.download = (d && d.nosaukums) || 'dokuments'; document.body.appendChild(a); a.click(); a.remove(); }
+    setTimeout(() => URL.revokeObjectURL(u), 120000);
+  } catch (e) { if (w) w.close(); toast(e.message, 'err'); }
+}
+const APPN = { pl: 'Pļaušana', logi: 'Logi', darz: 'Dārzniecība', stav: 'Stāvvieta', sniegs: 'Sniegs', aizv: 'Aizvietošana', izv: 'Izvešana', kais: 'Kaisāmmat.' };
+const APPC = { pl: 'mint', logi: 'sky', darz: 'mint', stav: 'sand', sniegs: 'lilac', aizv: 'mint', izv: 'sand', kais: 'sky' };
+function paneHist() {
+  const H = S.obj.hist, apps = [...new Set(H.map(h => h.app))], L = H.filter(h => !S.hf || h.app === S.hf);
+  $('opane').innerHTML = (apps.length > 1 ? `<div class="chips" id="hf" style="margin:0 0 12px"><button data-f="" class="${!S.hf ? 'on' : ''}">Visi · ${H.length}</button>${apps.map(a => `<button data-f="${a}" class="${S.hf === a ? 'on' : ''}">${APPN[a] || a}</button>`).join('')}</div>` : '') +
+    `<div class="list">${L.map(h => `<div class="hist ${h.plan ? 'plan' : ''}"><span class="d">${lvS(h.datums)}<small>${esc(String(h.datums || '').slice(0, 4))}</small></span>
+      <span class="tx"><b>${esc(h.name)}</b><span>${esc(h.statuss || '')}${h.kas ? ' · ' + esc(h.kas) : ''}${h.teksts ? ' · ' + esc(h.teksts) : ''}</span>
+      ${h.foto && h.foto.length ? `<span class="ph">${h.foto.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u.replace('sz=w1600', 'sz=w300'))}" alt="Bilde" loading="lazy"></a>`).join('')}</span>` : ''}</span>
+      <span class="chip ${APPC[h.app] || ''}">${APPN[h.app] || h.app}</span></div>`).join('') || '<div class="empty">Darbu vēl nav</div>'}</div>`;
+  if ($('hf')) $('hf').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { S.hf = b.dataset.f; paneHist(); } };
+}
+
+/* ---------- imports no kadastra ---------- */
+function impSheet(text, url, title, anorm) {
+  const s = sheet(`<div class="hd"><h3>Dati no kadastra</h3>${X}</div>
+    ${text ? '' : '<p class="note">Kadastrs.lv lapā nospiediet ⌘A, ⌘C (vai Safari pogu — tā tekstu nokopē) un ielīmējiet šeit.</p>'}
+    <div class="f"><label for="impT">Kadastra lapas teksts</label><textarea id="impT" placeholder="Ielīmējiet kadastrs.lv objekta lapas tekstu">${esc(text)}</textarea></div>
+    <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="impGo">Nolasīt datus</button></div>`);
+  s.parentNode.dataset.keep = '1';
+  S.imp = { url: url || '', title: title || '', anorm: anorm || '' };
+  $('impGo').onclick = async () => {
+    const t = $('impT').value.trim(); if (t.length < 40) return toast('Ielīmējiet kadastra lapas tekstu', 'err');
+    const b = $('impGo'); busy(b, 'AI lasa…');
+    try { const r = await call('kadParse', { text: t, url: S.imp.url, title: S.imp.title }); impPreview(r); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+  };
+}
+function impPreview(r) {
+  const sug = r.ieteikumi || [], pre = S.imp.anorm || (sug[0] && sug[0].anorm) || '';
+  const s = sheet(`<div class="hd"><h3>Pārbaudiet un saglabājiet</h3>${X}</div>
+    <div class="f"><label for="impObj">Objekts</label><select id="impObj"><option value="">— izvēlieties objektu —</option>${S.D.objects.map(o => `<option value="${esc(o.anorm)}" ${o.anorm === pre ? 'selected' : ''}>${esc(o.adrese)}</option>`).join('')}</select></div>
+    ${sug.length ? `<div class="chips" id="impSug" style="margin:-4px 0 12px">${sug.map(x => `<button data-a="${esc(x.anorm)}" class="${x.anorm === pre ? 'on' : ''}">${esc(x.adrese)}</button>`).join('')}</div>` : (r.dati && r.dati.adrese ? `<p class="note">Kadastrā: ${esc(r.dati.adrese)} — līdzīgs objekts nav atrasts, izvēlieties pats.</p>` : '')}
+    <div class="card">${kadHtml(r.dati)}</div>
+    <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="impSave">Saglabāt mājas lietā</button></div>`);
+  s.parentNode.dataset.keep = '1';
+  if ($('impSug')) $('impSug').onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return; $('impObj').value = b.dataset.a; $('impSug').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); };
+  $('impSave').onclick = async () => {
+    const a = $('impObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
+    const b = $('impSave'); busy(b, 'Saglabā…');
+    try { await call('kadSave', { anorm: a, dati: r.dati, url: S.imp.url }); closeSheet(); toast('Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+  };
+}
+/* Safari poga: kadastrs.lv logs (opener) sūta lapas tekstu. Pārbauda, ka ziņa tiešām no kadastrs.lv */
+const KAD_ORIGIN = (o) => { try { return /(^|\.)kadastrs\.lv$/.test(new URL(o).hostname) && new URL(o).protocol === 'https:'; } catch (e) { return false; } };
+let impGot = false;
+addEventListener('message', (e) => {
+  const m = e.data; if (!m || m.sh !== 'ml-kad' || !KAD_ORIGIN(e.origin)) return;
+  impGot = true; try { e.source.postMessage({ sh: 'ml-got' }, e.origin); } catch (x) {}
+  const go = () => { if (!can('vaditajs')) return toast('Jums ir tikai skatīšanās tiesības', 'err'); impSheet(String(m.text || '').slice(0, 60000), String(m.url || ''), String(m.title || '')); $('impGo').click(); };
+  if (S.D) go(); else { const t = setInterval(() => { if (S.D) { clearInterval(t); go(); } }, 300); }
+});
+function waitKad() {
+  let op = null; try { op = window.top.opener; } catch (e) {}
+  if (!op) { const t = setInterval(() => { if (S.D) { clearInterval(t); if (can('vaditajs')) impSheet('', '', ''); } }, 300); return; }   // opener nav (Safari aizsardzība) → teksts jau starpliktuvē
+  let n = 0; const t = setInterval(() => { if (impGot || ++n > 40) { clearInterval(t); if (!impGot && S.D && can('vaditajs')) impSheet('', '', ''); return; } try { op.postMessage({ sh: 'ml-ready' }, '*'); } catch (e) {} }, 500);
+}
+
+/* ---------- Safari poga (bookmarklet) ---------- */
+const BM = "javascript:(function(){var T=(document.body.innerText||'').slice(0,60000),D={sh:'ml-kad',url:location.href,title:document.title,text:T};try{navigator.clipboard.writeText(T)}catch(e){}var ok=0;addEventListener('message',function(e){if(e.origin!=='https://vaitkevix.cloud'||!e.data)return;if(e.data.sh==='ml-ready'&&!ok)e.source.postMessage(D,'https://vaitkevix.cloud');if(e.data.sh==='ml-got')ok=1});var w=window.open('https://vaitkevix.cloud/sh/#ml/imp','_blank');if(!w)alert('SH Mājas lieta: atļaujiet uznirstošos logus kadastrs.lv vai ielīmējiet tekstu (tas jau nokopēts).')})()";
+function renderPoga() {
+  $('view').innerHTML = `<h1 class="pt">Safari poga</h1>
+    <div class="card clay" style="margin:0 0 12px"><b style="font-size:16px">Kā tas strādā</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px;line-height:1.5">Atverat objekta lapu <b>kadastrs.lv</b> (ar savu kontu), nospiežat grāmatzīmi <b>«SH → Mājas lieta»</b>. Atveras portāls, AI nolasa kadastra datus, jūs izvēlaties objektu un saglabājat.</p></div>
+    <div class="card" style="margin:0 0 12px"><b style="font-size:16px">1. Pievienojiet pogu Safari (Mac)</b>
+      <ol class="steps" style="margin-top:8px"><li>Ieslēdziet izlases joslu: <b>Skats → Rādīt izlases joslu</b> (⇧⌘B).</li><li>Ievelciet šo pogu izlases joslā:</li></ol>
+      <p style="margin:10px 0"><a class="bm" id="bm" href="#" onclick="return false" draggable="true">${HOUSE} SH → Mājas lieta</a></p>
+      <p class="meta">Ja ievilkt neizdodas: pievienojiet jebkuru lapu izlasei (⌘D), tad <b>Grāmatzīmes → Rediģēt grāmatzīmes</b>, nosaukums «SH → Mājas lieta», adreses vietā ielīmējiet kodu:</p>
+      <textarea class="code" id="bmCode" readonly></textarea>
+      <div class="chips" style="margin-top:8px"><button id="bmCopy">Kopēt kodu</button></div></div>
+    <div class="card" style="margin:0 0 12px"><b style="font-size:16px">iPhone / iPad</b>
+      <ol class="steps" style="margin-top:8px"><li>Safari pievienojiet jebkuru lapu grāmatzīmēm.</li><li><b>Grāmatzīmes → Rediģēt</b> → šī grāmatzīme → adresē ielīmējiet kodu (nokopējiet ar pogu augstāk).</li><li>kadastrs.lv lapā atveriet grāmatzīmes un pieskarieties «SH → Mājas lieta».</li></ol></div>
+    <div class="card"><b style="font-size:16px">2. Lietošana</b><ol class="steps" style="margin-top:8px"><li>kadastrs.lv atveriet objektu (būves vai zemes vienības lapu ar datiem).</li><li>Spiediet <b>SH → Mājas lieta</b>. Teksts tiek arī nokopēts starpliktuvē.</li><li>Ja portāls atvērās bez datiem — spiediet <b>Ielīmēt</b> (⌘V) logā «Dati no kadastra».</li></ol></div>`;
+  $('bm').setAttribute('href', BM); $('bmCode').value = BM;
+  $('bm').onclick = (e) => { e.preventDefault(); toast('Ievelciet pogu izlases joslā — nespiediet šeit'); };
+  $('bmCopy').onclick = async () => { try { await navigator.clipboard.writeText(BM); toast('Kods nokopēts'); } catch (e) { $('bmCode').select(); document.execCommand('copy'); toast('Kods nokopēts'); } };
+}
+
+/* ---------- start ---------- */
+const IMP = /^#imp\b/.test(location.hash);
+if (IMP) { history.replaceState(null, '', location.pathname + location.search); waitKad(); }
+if (S.pin) load().catch(e => showGate(e.code === 'auth' ? e.message : e.message)); else showGate('');
+</script>
+</body>
+</html>
