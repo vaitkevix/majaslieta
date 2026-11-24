@@ -100,7 +100,7 @@ button{cursor:pointer}
 .afil .pill{min-height:40px;font-size:13px;padding:0 14px}
 .oh{margin:18px 0 8px;font-size:15px;font-weight:800}
 .oip{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}.oip label{display:block;padding:10px 12px;border-radius:16px;background:var(--surf2)}.oip span{display:block;font-size:12px;font-weight:800;color:var(--ink3)}.oip input{width:100%;height:36px;border:0;background:transparent;font-size:17px;font-weight:800;padding:0}
-.ochk{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:999px;background:var(--surf2);font-size:13.5px;font-weight:800;cursor:pointer}.ochk input{width:18px;height:18px;accent-color:var(--dark);margin:0}
+.ochk{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px 0 14px;border-radius:999px;background:var(--surf2);font-size:14px;font-weight:800;cursor:pointer;user-select:none;transition:background .15s,color .15s}.ochk input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}.ochk::before{content:'+';display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--surf);color:var(--ink3);font-size:15px;font-weight:800;line-height:1}.ochk:has(input:checked){background:var(--dark);color:var(--ondark)}.ochk:has(input:checked)::before{content:'✓';background:var(--ondark);color:var(--dark);font-size:12px}.ochk:has(input:focus-visible){outline:2px solid var(--dark);outline-offset:2px}
 .oarow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.3fr) 40px;gap:6px;margin-bottom:6px}.oarow input,.oarow select{height:44px;border:0;border-radius:14px;background:var(--surf2);padding:0 10px;font-size:14px;font-weight:700;min-width:0;width:100%}
 .oarow button{border:0;border-radius:14px;background:var(--surf2);font-size:18px;font-weight:800}
 .card .f input,.card .f select{background:var(--surf2)}.f textarea.sm{min-height:80px}
@@ -288,7 +288,8 @@ async function paneInfo() {
     <div class="oip">${[['stavi', 'Stāvi'], ['kapnu', 'Kāpņu telpas'], ['lifti', 'Lifti'], ['dzivokli', 'Dzīvokļi']].map(([k, l]) => `<label><span>${l}</span><input type="number" min="0" inputmode="numeric" data-ip="${k}" value="${d.ip[k] != null ? d.ip[k] : ''}"></label>`).join('')}</div>
     <div class="oh">Darba laiks</div>
     <div class="f"><label for="oKods">SMS kods</label><input id="oKods" value="${esc(d.dl.kods || '')}" placeholder="piem. 104" autocomplete="off"></div>
-    <div class="chips"><label class="ochk"><input type="checkbox" id="oUzk" ${d.dl.vajag_uzk ? 'checked' : ''}>Vajag uzkopēju</label><label class="ochk"><input type="checkbox" id="oSet" ${d.dl.vajag_set ? 'checked' : ''}>Vajag sētnieku</label></div>
+    <div class="f" style="margin-bottom:6px"><label>Objektā vajag</label></div>
+    <div class="chips"><label class="ochk"><input type="checkbox" id="oUzk" ${d.dl.vajag_uzk ? 'checked' : ''}>Uzkopējs</label><label class="ochk"><input type="checkbox" id="oSet" ${d.dl.vajag_set ? 'checked' : ''}>Sētnieks</label></div>
     <div class="chips" style="margin-top:8px">${d.dl.darbinieki.map(w => chipL(esc(w.vards || w.phone) + ' · ' + (w.amats === 'set' ? 'sētnieks' : 'uzkopējs') + (w.aktivs ? '' : ' · neaktīvs'))).join('') || chipL('nav piesaistītu darbinieku')}</div>
     <div class="oh">Darbinieki (Personāls)</div>
     <div class="chips">${d.personals.map(h => chipL(esc(h.vards) + (h.amats ? ' · ' + esc(h.amats) : '') + ' · ' + esc(h.statuss) + (h.sakums ? ' · no ' + esc(h.sakums) : ''))).join('') || chipL('nav pieņemšanas ierakstu')}</div>
