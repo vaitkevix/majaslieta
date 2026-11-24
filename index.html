@@ -427,15 +427,26 @@ function partsHtml(R) {
     <div class="kv">${[['Dzīvokļi', t.dz, 0], ['Kopplatība, m²', t.platiba], ['Koplietošanas telpas, m²', t.kopl], ['t.sk. pagrabs, m²', t.pagr], ['Autostāvvietas, m²', t.park], ['Zeme, m²', t.zeme]]
       .filter(([, v]) => v).map(([k, v]) => `<div><span>${k}</span><b>${r1(v)}</b></div>`).join('') || '<div><span>Kopsumma</span><b>—</b></div>'}</div></div>${P.map(one).join('')}`;
 }
-function partsEdit(R) {
-  const cur = (R.parts || []).map(x => x.adrese).join('\n');
+function partsEdit(R, keep) {
+  const L = keep || (R.parts || []).map(x => x.adrese), low = L.map(x => x.toLowerCase());
+  const street = (x) => String(x || '').split(/[\s,]+\d/)[0].trim().toLowerCase();
+  const sts = [...new Set(String(R.obj.adrese).split(/[\/,]/).map(street).filter(x => x.length > 2))];
+  const sug = S.D.objects.filter(o => o.anorm !== R.obj.anorm && !low.includes(o.adrese.toLowerCase()) && !/[\/]/.test(o.adrese) && sts.some(t => o.adrese.toLowerCase().startsWith(t))).slice(0, 8);
   sheet(`<div class="hd"><h3>Sastāvdaļas · ${esc(R.obj.adrese)}</h3>${X}</div>
-    <p class="hint">Katrā rindā viena māja (adrese kā objektu sarakstā). Objekta adrese visās lietotnēs paliek tā pati.</p>
-    <div class="f"><textarea id="ptT" class="sm" style="min-height:160px" placeholder="Aglonas 11\nPrūšu 4B">${esc(cur)}</textarea></div>
+    <p class="hint">Mājas, kas ietilpst šajā objektā. Objekta adrese visās lietotnēs paliek tā pati.</p>
+    <div class="list" id="ptL" style="margin:0 0 12px">${L.map((x, i) => `<div class="orow" style="display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:16px;background:var(--surf);margin-bottom:6px"><b style="flex:1">${esc(x)}</b><button class="pill" data-rm="${i}" aria-label="Noņemt ${esc(x)}">Noņemt</button></div>`).join('') || '<div class="empty">Nav nevienas mājas — nav apvienots</div>'}</div>
+    ${sug.length ? `<div class="f"><span class="lb">Tās pašas ielas mājas — pievienot ar vienu klikšķi</span><div class="chips" id="ptS">${sug.map(o => `<button data-add="${esc(o.adrese)}">+ ${esc(o.adrese)}</button>`).join('')}</div></div>` : ''}
+    <div class="f"><label for="ptN">Cita māja</label><div style="display:flex;gap:8px"><input id="ptN" list="ptNl" placeholder="Adrese, piem. Dignājas 3D" autocomplete="off" style="flex:1"><button class="pill dk" id="ptAdd">Pievienot</button></div>
+      <datalist id="ptNl">${S.D.objects.filter(o => o.anorm !== R.obj.anorm && !low.includes(o.adrese.toLowerCase())).map(o => `<option value="${esc(o.adrese)}">`).join('')}</datalist></div>
     <div class="chips"><button id="ptAuto">Automātiski pēc adreses</button><button id="ptNone">Nav apvienots</button></div>
     <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="ptSave">Saglabāt</button></div>`).parentNode.dataset.keep = '1';
+  const add = (x) => { x = String(x || '').trim(); if (!x) return; if (low.includes(x.toLowerCase())) return toast('Šī māja jau ir sarakstā', 'err'); partsEdit(R, L.concat(x)); setTimeout(() => $('ptN') && $('ptN').focus(), 30); };
+  $('ptL').onclick = (e) => { const b = e.target.closest('[data-rm]'); if (b) partsEdit(R, L.filter((_, i) => i !== +b.dataset.rm)); };
+  if ($('ptS')) $('ptS').onclick = (e) => { const b = e.target.closest('[data-add]'); if (b) add(b.dataset.add); };
+  $('ptAdd').onclick = () => add($('ptN').value);
+  $('ptN').onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); add($('ptN').value); } };
   const go = async (parts, msg) => { try { await call('partsSave', { anorm: R.obj.anorm, parts }); closeSheet(); await load(); await openObj(R.obj.anorm); toast(msg); } catch (e) { toast(e.message, 'err'); } };
-  $('ptSave').onclick = () => go($('ptT').value.split('\n').map(x => x.trim()).filter(Boolean), 'Sastāvdaļas saglabātas');
+  $('ptSave').onclick = () => { const n = $('ptN').value.trim(); go(n && !low.includes(n.toLowerCase()) ? L.concat(n) : L, 'Sastāvdaļas saglabātas'); };
   $('ptAuto').onclick = () => go('auto', 'Sastāvdaļas — automātiski');
   $('ptNone').onclick = () => go([], 'Atzīmēts: nav apvienots');
 }
