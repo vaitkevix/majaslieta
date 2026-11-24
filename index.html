@@ -44,6 +44,7 @@ button{cursor:pointer}
 .seg::-webkit-scrollbar{display:none}
 .seg button{flex:1 0 auto;min-height:40px;padding:0 16px;border:0;border-radius:999px;background:transparent;font-size:14px;font-weight:800;white-space:nowrap}
 .seg button.on{background:var(--dark);color:var(--ondark)}
+@media(max-width:480px){.seg{gap:2px;padding:4px}.seg button{padding:0 10px;font-size:13px}}
 .list{display:flex;flex-direction:column;gap:8px}
 .obj{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surf);border:0;width:100%;text-align:left;color:var(--ink)}
 .obj .n{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--clay)}
@@ -239,7 +240,7 @@ async function openObj(a) {
 function renderObj() {
   const R = S.obj, o = R.obj;
   $('view').innerHTML = `<button class="back" id="back">‹ Visi objekti</button><h1 class="pt">${esc(o.adrese)}</h1>
-    <div class="seg" id="otab">${[['info', 'Objekts'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Darbu vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="seg" id="otab">${[['info', 'Objekts'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div id="opane"></div>`;
   $('back').onclick = () => { S.obj = null; render(); };
   $('otab').onclick = (e) => { const b = e.target.closest('[data-o]'); if (b) { S.otab = b.dataset.o; renderObj(); } };
