@@ -147,6 +147,7 @@ const S = { pin: ls.get(PINK) || '', tab: 'list', q: '', D: null, obj: null, ota
 const RW = { admin: 3, vaditajs: 2, skatitajs: 0 };
 const can = (r) => (RW[(S.D && S.D.me.role) || ''] || 0) >= RW[r];
 const lvS = (d) => /^\d{4}-\d{2}-\d{2}/.test(d || '') ? (+d.slice(8, 10)) + '.' + d.slice(5, 7) + '.' : esc(d || '');
+const akeyN = (x) => String(x || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');   // = Worker util.js anorm
 const nf = (n, f) => (+n).toLocaleString('lv-LV', { maximumFractionDigits: f == null ? 2 : f });
 const kb = (n) => n > 1e6 ? nf(n / 1e6, 1) + ' MB' : Math.max(1, Math.round(n / 1e3)) + ' KB';
 const HOUSE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11.5h14V9"/><path d="M9.5 20.5v-5h5v5"/></svg>';
@@ -257,7 +258,7 @@ async function paneInfo() {
   const d = R.info;
   if (!can('admin')) {   // skatīšanās
     p.innerHTML = `<div class="card"><div class="kv">${[['Adrese', o.adrese], ['Grupa', o.grupa], ['Darbu vadītājs', o.vaditajs], ['Pārvaldnieks', d.parv], ['Klients', d.klients]].filter(x => x[1]).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}
-      ${[['stavi', 'Stāvi'], ['kapnu', 'Kāpņu telpas'], ['lifti', 'Lifti'], ['dzivokli', 'Dzīvokļi']].filter(([k]) => d.ip[k] != null).map(([k, l]) => `<div><span>${l}</span><b>${d.ip[k]}</b></div>`).join('')}
+      ${[['stavi', 'Stāvi'], ['kapnu', 'Kāpņu telpas'], ['lifti', 'Lifti'], ['dzivokli', 'Dzīvokļi']].filter(([k]) => d.ip[k] != null).map(([k, l]) => `<div><span>${l}</span><b>${esc(d.ip[k])}</b></div>`).join('')}
       ${d.dl.kods ? `<div><span>Darba laika SMS kods</span><b>${esc(d.dl.kods)}</b></div>` : ''}</div>
       ${o.piekluve ? `<div class="oh">Piekļuve</div><div class="note" style="white-space:pre-wrap">${esc(o.piekluve)}</div>` : ''}
       <div class="oh">Pakalpojumi</div><div class="chips">${Object.keys(d.svcNames).filter(k => d.svc[k]).map(k => chipL(esc(d.svcNames[k]), 'ok')).join('') || chipL('nav atzīmētu')}</div>
@@ -286,7 +287,7 @@ async function paneInfo() {
     <div class="chips" id="oSvc">${Object.keys(d.svcNames).map(k => `<label class="ochk"><input type="checkbox" data-svc="${k}" ${d.svc[k] ? 'checked' : ''}>${esc(d.svcNames[k])}</label>`).join('')}</div>
     <p class="hint" style="margin-top:6px">Objekts redzams tikai tajās lietotnēs, kuru pakalpojums atzīmēts.${d.apjoms.zale_m2 ? ' Zāliens: ' + nf(d.apjoms.zale_m2) + ' m².' : ''}${d.apjoms.logi ? ' Logi: ' + nf(d.apjoms.logi) + '.' : ''}</p>
     <div class="oh">Ēkas dati</div>
-    <div class="oip">${[['stavi', 'Stāvi'], ['kapnu', 'Kāpņu telpas'], ['lifti', 'Lifti'], ['dzivokli', 'Dzīvokļi']].map(([k, l]) => `<label><span>${l}</span><input type="number" min="0" inputmode="numeric" data-ip="${k}" value="${d.ip[k] != null ? d.ip[k] : ''}"></label>`).join('')}</div>
+    <div class="oip">${[['stavi', 'Stāvi'], ['kapnu', 'Kāpņu telpas'], ['lifti', 'Lifti'], ['dzivokli', 'Dzīvokļi']].map(([k, l]) => `<label><span>${l}</span><input type="number" min="0" inputmode="numeric" data-ip="${k}" value="${d.ip[k] != null ? esc(d.ip[k]) : ''}"></label>`).join('')}</div>
     <div class="oh">Darba laiks</div>
     <div class="f"><label for="oKods">SMS kods</label><input id="oKods" value="${esc(d.dl.kods || '')}" placeholder="piem. 104" autocomplete="off"></div>
     <div class="f" style="margin-bottom:6px"><label>Objektā vajag</label></div>
@@ -309,9 +310,12 @@ async function paneInfo() {
     if (off.length && !confirm('Noņemt: ' + off.map(k => d.svcNames[k]).join(', ') + '? Objekts pazudīs no šīm lietotnēm, un grafiks tiks apturēts (vēsture paliek).')) return;
     const ip = Object.fromEntries([...p.querySelectorAll('[data-ip]')].map(x => [x.dataset.ip, x.value]));
     const b = $('oSave'); busy(b, 'Saglabā…');
-    try {   // vispirms kartīte (pārbauda Darba laika kodu), tad pamatdati — tāpat kā agrāk administrēšanā
-      await call('objInfoSave', { adrese: n.adrese, algas, piezimes: $('oNote').value, svc, ip, parv: $('oParv').value, dl: { kods: $('oKods').value.trim(), vajag_uzk: $('oUzk').checked, vajag_set: $('oSet').checked } });
-      await call('objSave', { old: o.anorm, obj: n });
+    try {
+      const info = () => call('objInfoSave', { adrese: n.adrese, algas, piezimes: $('oNote').value, svc, ip, parv: $('oParv').value, dl: { kods: $('oKods').value.trim(), vajag_uzk: $('oUzk').checked, vajag_set: $('oSet').checked } });
+      if (akeyN(n.adrese) !== o.anorm) {   // pārdēvēšana: vispirms adrese (visas saites pāriet uz jauno), tad kartīte ar jauno adresi
+        if (!confirm('Mainīt adresi «' + o.adrese + '» → «' + n.adrese + '»? Darbi, grafiki, kadastrs un dokumenti pāries uz jauno adresi.')) { unbusy(b); return; }
+        await call('objSave', { old: o.anorm, obj: n }); await info();
+      } else { await info(); await call('objSave', { old: o.anorm, obj: n }); }   // kartīte vispirms (pārbauda Darba laika kodu)
       S.M = null; await afterSave(n.adrese, 'Saglabāts — atjaunojas visās lietotnēs');
     } catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
@@ -398,7 +402,7 @@ function parkHtml(G, T) {
     ${G.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">m²</th></tr></thead><tbody>${
       G.map(g => `<tr><td><b style="display:block">${esc(g.nosaukums || 'Telpu grupa')}</b><small style="color:var(--ink3);font-weight:700">${esc([g.apz, g.lv].filter(Boolean).join(' · '))}</small>${parkBtn(g, true)}</td><td class="r">${g.m2 ? nf(g.m2) : '—'}</td></tr>`).join('')}</tbody></table></div>` : ''}
     ${T.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Koplietošanas telpa</th><th class="r">Skaits</th><th class="r">m²</th></tr></thead><tbody>${
-      T.map(t => `<tr><td>${esc(t.nosaukums)}${t.zona ? ' · ' + esc(t.zona.toLowerCase()) : ''}</td><td class="r">${t.skaits}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
+      T.map(t => `<tr><td>${esc(t.nosaukums)}${t.zona ? ' · ' + esc(t.zona.toLowerCase()) : ''}</td><td class="r">${esc(t.skaits)}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
 }
 function partSum(L) {   // kopsummas no sastāvdaļu kadastra datiem
   const t = { majas: 0, dz: 0, kopl: 0, pagr: 0, park: 0, platiba: 0, zeme: 0 }, zs = new Set();
@@ -406,7 +410,7 @@ function partSum(L) {   // kopsummas no sastāvdaļu kadastra datiem
     (d.buves || []).forEach(b => { t.dz += +b.dzivokli || 0; t.platiba += +b.kopplatiba_m2 || 0; });
     const T = Array.isArray(d.telpas) ? d.telpas : parseTelpas(d.citi && d.citi['Koplietošanas telpas']);
     T.forEach(r => { const m = +r.m2 || 0; if (isPark(r.nosaukums)) t.park += m; else { t.kopl += m; if (r.zona === 'Pagrabs') t.pagr += m; } });
-    (d.grupas || []).forEach(g => { if (isPark(g.nosaukums + ' ' + g.lv)) t.park += +g.m2 || 0; });
+    (d.grupas || []).forEach(g => { if (gPark(g)) t.park += +g.m2 || 0; });
     const z = d.zeme || {}; if (z.platiba_m2 && !zs.has(z.apzimejums || x.anorm)) { zs.add(z.apzimejums || x.anorm); t.zeme += +z.platiba_m2; } });
   return t;
 }
@@ -416,7 +420,7 @@ function partsHtml(R) {
     return `<div class="bld card" style="padding:14px;margin-top:10px"><div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap"><h3 style="margin:0">${esc(x.adrese)}</h3>
       ${x.anorm ? `<button class="pill" data-open="${esc(x.anorm)}">Atvērt ›</button>` : '<span class="chip w">nav objektu sarakstā</span>'}</div>
       ${d ? `<div class="kv" style="margin-top:10px">${[['Dzīvokļi', b.reduce((a, y) => a + (+y.dzivokli || 0), 0)], ['Stāvi', B.virszemes_stavi], ['Kopplatība, m²', b.reduce((a, y) => a + (+y.kopplatiba_m2 || 0), 0)], ['Ekspluatācijā', B.ekspluatacijas_gads]]
-        .filter(([, v]) => v).map(([k, v]) => `<div><span>${k}</span><b>${/gads|Eksp/.test(k) ? v : nf(v)}</b></div>`).join('')}</div>` : `<p class="hint" style="margin:8px 0 0">${x.anorm ? 'Kadastra datu vēl nav — atveriet māju un nolasiet ar «SH Kadastrs».' : 'Šī māja nav objektu sarakstā.'}</p>`}</div>`; };
+        .filter(([, v]) => v).map(([k, v]) => `<div><span>${k}</span><b>${/gads|Eksp/.test(k) ? esc(v) : nf(v)}</b></div>`).join('')}</div>` : `<p class="hint" style="margin:8px 0 0">${x.anorm ? 'Kadastra datu vēl nav — atveriet māju un nolasiet ar «SH Kadastrs».' : 'Šī māja nav objektu sarakstā.'}</p>`}</div>`; };
   return `<div class="card clay"><b style="font-size:16px">Apvienots objekts · ${P.length} ${P.length === 1 ? 'māja' : 'mājas'}${R.manual ? ' · norādīts ar roku' : ''}</b>
     <p style="margin:6px 0 10px;font-weight:600;color:var(--ink2);font-size:14px">Kadastrs ir katrai mājai atsevišķi. Kopsumma no ${t.majas} / ${P.length} mājām ar kadastra datiem.</p>
     <div class="kv">${[['Dzīvokļi', t.dz, 0], ['Kopplatība, m²', t.platiba], ['Koplietošanas telpas, m²', t.kopl], ['t.sk. pagrabs, m²', t.pagr], ['Autostāvvietas, m²', t.park], ['Zeme, m²', t.zeme]]
@@ -437,20 +441,20 @@ function partsEdit(R) {
 function paneKad() {
   const R = S.obj, k = R.kad, p = $('opane');
   if (R.parts) {
+    S.kadEdit = false;   // apvienotajā skatā atzīmes nemaina — tās maina katras mājas lapā
     p.innerHTML = partsHtml(R) + (k ? `<div class="oh">Kadastra dati, kas saglabāti pašam apvienotajam objektam</div><div class="card">${kadHtml(k.dati)}</div>` : '');
     p.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { S.otab = 'kad'; openObj(b.dataset.open); });
     if (can('admin')) { p.insertAdjacentHTML('beforeend', '<div class="sec"><span></span><div class="chips"><button id="ptEdit">Labot sastāvdaļas</button></div></div>'); $('ptEdit').onclick = () => partsEdit(R); }
     return;
   }
   S.kadEdit = can('admin');
-  p.innerHTML = k ? `<div class="card">${kadHtml(k.dati)}<p class="meta">Atjaunots ${esc(k.atjaunots)}${k.kas ? ' · ' + esc(k.kas) : ''}${k.avots ? ` · <a href="${esc(k.avots)}" target="_blank" rel="noopener" style="color:inherit">avots kadastrs.lv</a>` : ''}</p></div>`
+  p.innerHTML = k ? `<div class="card">${kadHtml(k.dati)}<p class="meta">Atjaunots ${esc(k.atjaunots)}${k.kas ? ' · ' + esc(k.kas) : ''}${/^https:\/\//i.test(k.avots || '') ? ` · <a href="${esc(k.avots)}" target="_blank" rel="noopener" style="color:inherit">avots kadastrs.lv</a>` : ''}</p></div>`
     : `<div class="card clay"><b style="font-size:16px">Kadastra datu vēl nav</b><p style="margin:6px 0 0;font-weight:600;color:var(--ink2);font-size:14px">Atveriet šī objekta lapu kadastrs.lv (Meklēt būves → būve) un spiediet grāmatzīmi «SH Kadastrs» → «Atvērt Mājas lietā». Vai ielīmējiet lapas tekstu šeit.</p></div>`;
   if (can('vaditajs')) p.insertAdjacentHTML('beforeend', `<div class="sec"><span></span><div class="chips"><button id="kNew">Ielīmēt tekstu no kadastra</button><button id="kHow">Safari poga</button></div></div>`);
   p.querySelectorAll('[data-park]').forEach(b => b.onclick = async () => {
-    const g = k.dati.grupas[+b.dataset.park]; if (!g) return; const was = gPark(g); g.park = !was; busy(b, '…');
-    const dati = JSON.parse(JSON.stringify(k.dati)); (dati.grupas || []).forEach(x => delete x._i);
-    try { const sv = await call('kadSave', { anorm: R.obj.anorm, dati, url: k.avots || '' }); toast(g.park ? (sv && sv.stav ? 'Atzīmēts · Pazemes stāvvietās ' + sv.stav + ' m²' : 'Atzīmēts kā autostāvvieta') : 'Noņemts'); await openObj(R.obj.anorm); }
-    catch (e) { g.park = was; unbusy(b); toast(e.message, 'err'); } });
+    const i = +b.dataset.park, g = k.dati.grupas[i]; if (!g) return; const next = !gPark(g); busy(b, '…');
+    try { const sv = await call('kadPark', { anorm: R.obj.anorm, i, apz: g.apz || '', park: next }); toast(parkMsg(next, sv)); await openObj(R.obj.anorm); }
+    catch (e) { unbusy(b); toast(e.message, 'err'); } });
   if ($('kNew')) { $('kNew').onclick = () => impSheet('', '', '', R.obj.anorm); $('kHow').onclick = () => { S.obj = null; S.tab = 'poga'; render(); }; }
   if (can('admin')) { p.insertAdjacentHTML('beforeend', '<div class="chips" style="justify-content:flex-end;margin-top:8px"><button id="ptEdit">Apvienots objekts? Norādīt mājas</button></div>'); $('ptEdit').onclick = () => partsEdit(R); }
 }
@@ -458,7 +462,7 @@ function paneDoc() {
   const R = S.obj, p = $('opane');
   p.innerHTML = (can('vaditajs') ? `<div class="card" style="margin:0 0 12px"><div class="f"><label for="dKind">Dokumenta veids</label><select id="dKind">${S.D.kinds.map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
       <label class="pill dk big" style="width:100%;cursor:pointer">+ Pievienot dokumentu<input id="dFile" type="file" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" multiple hidden></label>
-      <p class="meta" style="margin:8px 4px 0">PDF, bildes, Word, Excel · līdz 15 MB</p></div>` : '') +
+      <p class="meta" style="margin:8px 4px 0">PDF, bildes, Word, Excel · līdz 10 MB</p></div>` : '') +
     `<div class="list" id="dList">${R.docs.map(d => `<div class="doc"><span class="n">${esc((d.nosaukums.split('.').pop() || '').slice(0, 4).toUpperCase() || 'DOK')}</span>
       <span class="tx"><b>${esc(d.nosaukums)}</b><span>${esc(d.tips)} · ${kb(d.izmers)} · ${esc(d.laiks)}${d.pievienoja ? ' · ' + esc(d.pievienoja) : ''}</span></span>
       <button class="pill" data-open="${esc(d.id)}">Atvērt</button>${can('vaditajs') ? `<button class="ib" data-del="${esc(d.id)}" aria-label="Noņemt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>` : ''}</div>`).join('') || '<div class="empty">Dokumentu vēl nav</div>'}</div>`;
@@ -473,7 +477,7 @@ const readAsData = (f) => new Promise((res, rej) => { const r = new FileReader()
 async function upload(files, tips) {
   const a = S.obj.obj.anorm; let n = 0;
   for (const f of files) {
-    if (f.size > 15e6) { toast(f.name + ': par lielu (līdz 15 MB)', 'err'); continue; }
+    if (f.size > 10e6) { toast(f.name + ': par lielu (līdz 10 MB)', 'err'); continue; }
     toast('Augšupielādē ' + f.name + '…');
     try { let data = await readAsData(f); if (/^data:;/.test(data) || /^data:application\/octet-stream/.test(data)) { const t = /\.docx$/i.test(f.name) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : /\.xlsx$/i.test(f.name) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : /\.pdf$/i.test(f.name) ? 'application/pdf' : ''; if (t) data = data.replace(/^data:[^;]*;/, 'data:' + t + ';'); }
       await call('docUpload', { anorm: a, name: f.name, tips, data }); n++; } catch (e) { toast(f.name + ': ' + e.message, 'err'); }
@@ -496,7 +500,7 @@ function paneHist() {
     `<div class="list">${L.map(h => `<div class="hist ${h.plan ? 'plan' : ''}"><span class="d">${lvS(h.datums)}<small>${esc(String(h.datums || '').slice(0, 4))}</small></span>
       <span class="tx"><b>${esc(h.name)}${h.part ? ' · ' + esc(h.part) : ''}</b><span>${esc(h.statuss || '')}${h.kas ? ' · ' + esc(h.kas) : ''}${h.teksts ? ' · ' + esc(h.teksts) : ''}</span>
       ${h.foto && h.foto.length ? `<span class="ph">${h.foto.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u.replace('sz=w1600', 'sz=w300'))}" alt="Bilde" loading="lazy"></a>`).join('')}</span>` : ''}</span>
-      <span class="chip ${APPC[h.app] || ''}">${APPN[h.app] || h.app}</span></div>`).join('') || '<div class="empty">Darbu vēl nav</div>'}</div>`;
+      <span class="chip ${APPC[h.app] || ''}">${esc(APPN[h.app] || h.app)}</span></div>`).join('') || '<div class="empty">Darbu vēl nav</div>'}</div>`;
   if ($('hp')) $('hp').onclick = (e) => { const b = e.target.closest('[data-p]'); if (b) { S.hp = !!b.dataset.p; S.hf = ''; paneHist(); } };
   if ($('hf')) $('hf').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { S.hf = b.dataset.f; paneHist(); } };
 }
@@ -529,7 +533,8 @@ function impPreview(r, keep) {
   $('impSave').onclick = async () => {
     const a = $('impObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
     const b = $('impSave'); busy(b, 'Saglabā…');
-    try { const sv = await call('kadSave', { anorm: a, dati: r.dati, url: S.imp.url }); closeSheet(); toast(sv && sv.stav ? 'Saglabāts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : 'Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+    const dati = JSON.parse(JSON.stringify(r.dati || {})); (dati.grupas || []).forEach(x => { delete x._i; });
+    try { const sv = await call('kadSave', { anorm: a, dati, url: S.imp.url }); closeSheet(); toast(sv && sv.stavState === 'added' ? 'Saglabāts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : sv && sv.stavState === 'off' ? 'Saglabāts · Pazemes stāvvietas šim objektam izslēgtas — nemainīts' : 'Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
 }
 /* Safari poga: kadastrs.lv logs (opener) sūta lapas tekstu. Pārbauda, ka ziņa tiešām no kadastrs.lv */
@@ -602,11 +607,19 @@ function telpasTbl1(T, title) {
   if (!T.length) return '';
   const tm = T.reduce((s, t) => s + t.m2, 0), ts = T.reduce((s, t) => s + t.skaits, 0);
   return `<div class="bld"><h3>${esc(title)}</h3><div class="tw"><table class="tb"><thead><tr><th>Telpa</th><th class="r">Skaits</th><th class="r">Platība, m²</th></tr></thead><tbody>${
-    T.map(t => `<tr><td>${esc(t.nosaukums)}</td><td class="r">${t.skaits}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Kopā</td><td class="r">${ts}</td><td class="r">${nf(Math.round(tm * 10) / 10)}</td></tr></tfoot></table></div></div>`;
+    T.map(t => `<tr><td>${esc(t.nosaukums)}</td><td class="r">${esc(t.skaits)}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Kopā</td><td class="r">${esc(ts)}</td><td class="r">${nf(Math.round(tm * 10) / 10)}</td></tr></tfoot></table></div></div>`;
 }
 /* Telpu grupa ir autostāvvieta: nosaukums/veids, telpas grupā (no pogas) vai atzīmēts ar roku (park true/false) */
+/* Tā pati loģika kā Worker majaslieta.js gPark / parkingM2 (virszemes/ārtelpas stāvvietas nav pazemes) */
 const gPark = (g) => g.park === true || (g.park !== false && (isPark(g.nosaukums + ' ' + g.lv) || (Array.isArray(g.telpas_n) && g.telpas_n.some(isPark))));
+const overGround = (x) => /virszem|ārtelp/i.test(String(x || ''));
 const parkBtn = (g, on) => S.kadEdit && g._i != null ? `<button class="pk ${on ? 'on' : ''}" data-park="${g._i}" title="${on ? 'Noņemt atzīmi — nav autostāvvieta' : 'Atzīmēt kā autostāvvietu'}">Autostāvvieta</button>` : '';
+/* Godīgs paziņojums: kas notika ar Pazemes stāvvietām */
+function parkMsg(on, sv) {
+  const st = (sv && sv.stavState) || '';
+  if (on) return st === 'added' ? 'Atzīmēts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : st === 'in' ? 'Atzīmēts · jau ir Pazemes stāvvietās' : st === 'off' ? 'Atzīmēts · Pazemes stāvvietas šim objektam izslēgtas cilnē Objekts' : 'Atzīmēts kā autostāvvieta (virszemes — Pazemes stāvvietās nepievieno)';
+  return st === 'in' ? 'Noņemts · Pazemes stāvvietās nemainīts — izslēdziet pakalpojumu cilnē Objekts' : 'Noņemts';
+}
 function grupasTbl(G) {
   if (!G.length) return '';
   return `<div class="bld"><h3>Citas telpu grupas</h3><div class="tw"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">Platība, m²</th></tr></thead><tbody>${
