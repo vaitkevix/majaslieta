@@ -223,11 +223,25 @@ function kadHtml(d) {
   d = d || {};
   const top = kvs(d, KL) + kvs(d.zeme || {}, ZL);
   const B = (Array.isArray(d.buves) ? d.buves : []).map((b, i) => `<div class="bld card" style="padding:14px"><h3>${esc(b.nosaukums || 'Būve ' + (i + 1))}</h3><div class="kv">${kvs(b, BL) || '<div><span>Dati</span><b>—</b></div>'}</div></div>`).join('');
-  const T = Array.isArray(d.telpas) ? d.telpas : parseTelpas(d.citi && d.citi['Koplietošanas telpas']);
-  const G = Array.isArray(d.grupas) ? d.grupas : [];
+  const T0 = Array.isArray(d.telpas) ? d.telpas : parseTelpas(d.citi && d.citi['Koplietošanas telpas']);
+  const G0 = Array.isArray(d.grupas) ? d.grupas : [];
+  const T = T0.filter(t => !isPark(t.nosaukums)), G = G0.filter(g => !isPark(g.nosaukums + ' ' + g.lv));
+  const TP = T0.filter(t => isPark(t.nosaukums)), GP = G0.filter(g => isPark(g.nosaukums + ' ' + g.lv));
   const skip = (k) => k === 'Koplietošanas telpas' || (k === 'Citas telpu grupas' && G.length);
   const C = d.citi && typeof d.citi === 'object' ? Object.keys(d.citi).filter(k => d.citi[k] != null && d.citi[k] !== '' && !skip(k)).slice(0, 40).map(k => `<div><span>${esc(k)}</span><b>${esc(typeof d.citi[k] === 'object' ? JSON.stringify(d.citi[k]) : d.citi[k])}</b></div>`).join('') : '';
-  return `<div class="kv">${top || '<div><span>Dati</span><b>—</b></div>'}</div>${B}${C ? `<div class="bld"><h3>Citi dati</h3><div class="kv">${C}</div></div>` : ''}${telpasTbl(T)}${grupasTbl(G)}`;
+  return `<div class="kv">${top || '<div><span>Dati</span><b>—</b></div>'}</div>${B}${C ? `<div class="bld"><h3>Citi dati</h3><div class="kv">${C}</div></div>` : ''}${parkHtml(GP, TP)}${telpasTbl(T)}${grupasTbl(G)}`;
+}
+/* Autostāvvietas: telpu grupas / telpas, kas kadastrā ir stāvvietas, garāžas, brauktuves (lietošanas veids 1242, 1241…) */
+const isPark = (x) => /auto\s*st[āa]v|st[āa]vviet|garā[žz]|garaz|auto\s*novietn|transportlīdzekļ|brauktuv|\b124[12]\b/i.test(String(x || ''));   // «ratiņu novietne» NAV stāvvieta
+function parkHtml(G, T) {
+  if (!G.length && !T.length) return '';
+  const gm = G.reduce((a, g) => a + (+g.m2 || 0), 0), tm = T.reduce((a, t) => a + (+t.m2 || 0), 0), vietas = G.length + T.filter(t => /viet|garā[žz]/i.test(t.nosaukums)).reduce((a, t) => a + (+t.skaits || 1), 0);
+  return `<div class="bld card clay" style="padding:14px;margin-top:12px"><h3>Autostāvvietas</h3>
+    <div class="kv">${vietas ? `<div><span>Telpu grupas / vietas</span><b>${vietas}</b></div>` : ''}<div><span>Kopējā platība, m²</span><b>${nf(Math.round((gm + tm) * 10) / 10)}</b></div></div>
+    ${G.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">m²</th></tr></thead><tbody>${
+      G.map(g => `<tr><td><b style="display:block">${esc(g.nosaukums || 'Telpu grupa')}</b><small style="color:var(--ink3);font-weight:700">${esc([g.apz, g.lv].filter(Boolean).join(' · '))}</small></td><td class="r">${g.m2 ? nf(g.m2) : '—'}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${T.length ? `<div class="tw" style="margin-top:10px"><table class="tb"><thead><tr><th>Koplietošanas telpa</th><th class="r">Skaits</th><th class="r">m²</th></tr></thead><tbody>${
+      T.map(t => `<tr><td>${esc(t.nosaukums)}${t.zona ? ' · ' + esc(t.zona.toLowerCase()) : ''}</td><td class="r">${t.skaits}</td><td class="r">${nf(t.m2)}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
 }
 function paneKad() {
   const R = S.obj, k = R.kad, p = $('opane');
@@ -384,8 +398,8 @@ function telpasTbl1(T, title) {
 }
 function grupasTbl(G) {
   if (!G.length) return '';
-  return `<div class="bld"><h3>Citas telpu grupas</h3><div class="tw"><table class="tb"><thead><tr><th>Apzīmējums</th><th>Nosaukums</th><th>Lietošanas veids</th><th class="r">Platība, m²</th></tr></thead><tbody>${
-    G.map(g => `<tr><td>${esc(g.apz)}</td><td>${esc(g.nosaukums)}</td><td>${esc(g.lv)}</td><td class="r">${g.m2 ? nf(g.m2) : '—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  return `<div class="bld"><h3>Citas telpu grupas</h3><div class="tw"><table class="tb"><thead><tr><th>Telpu grupa</th><th class="r">Platība, m²</th></tr></thead><tbody>${
+    G.map(g => `<tr><td><b style="display:block">${esc(g.nosaukums || 'Telpu grupa')}</b><small style="color:var(--ink3);font-weight:700">${esc([g.apz, g.lv].filter(Boolean).join(' · '))}</small></td><td class="r">${g.m2 ? nf(g.m2) : '—'}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
 function kadHash() {
   const m = location.hash.match(/^#kadastrs=([A-Za-z0-9_-]+)/); if (!m) return;
