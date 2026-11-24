@@ -324,7 +324,7 @@ function impPreview(r) {
   $('impSave').onclick = async () => {
     const a = $('impObj').value; if (!a) return toast('Izvēlieties objektu', 'err');
     const b = $('impSave'); busy(b, 'Saglabā…');
-    try { await call('kadSave', { anorm: a, dati: r.dati, url: S.imp.url }); closeSheet(); toast('Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
+    try { const sv = await call('kadSave', { anorm: a, dati: r.dati, url: S.imp.url }); closeSheet(); toast(sv && sv.stav ? 'Saglabāts · pievienots Pazemes stāvvietām (' + sv.stav + ' m²)' : 'Kadastra dati saglabāti'); S.otab = 'kad'; await load(); await openObj(a); } catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
 }
 /* Safari poga: kadastrs.lv logs (opener) sūta lapas tekstu. Pārbauda, ka ziņa tiešām no kadastrs.lv */
