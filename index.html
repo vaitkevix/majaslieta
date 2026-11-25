@@ -55,10 +55,10 @@ button{cursor:pointer}
 .chips button.on{background:var(--dark);color:var(--ondark)}
 .search{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.search input{flex:1 1 220px;height:48px;border:0;border-radius:999px;background:var(--surf);padding:0 18px;font-size:16px;font-weight:700;min-width:0}
 .empty{padding:28px 18px;text-align:center;font-weight:700;color:var(--ink3)}
-.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;grid-auto-flow:row dense}.kv div.w2{grid-column:span 2}
 .card .f input,.card .f select,.card .f textarea,.doc .pill,.hist .chip{background:var(--surf2)}
 .kv div{padding:12px 14px;border-radius:18px;background:var(--surf2);min-width:0}
-.kv span{display:block;font-size:12px;font-weight:800;color:var(--ink3)}.kv b{display:block;font-size:16px;font-weight:800;overflow-wrap:anywhere}
+.kv span{display:block;font-size:12px;font-weight:800;color:var(--ink3)}.kv b{display:block;font-size:16px;font-weight:800;overflow-wrap:break-word;font-variant-numeric:tabular-nums}
 .tw{overflow-x:auto;margin-top:2px}.tb{width:100%;border-collapse:collapse;font-size:14px}.tb th{text-align:left;font-size:12px;font-weight:800;color:var(--ink3);padding:8px 10px;border-bottom:1px solid var(--line,rgba(0,0,0,.1))}.tb td{padding:9px 10px;border-bottom:1px solid var(--line,rgba(0,0,0,.06));font-weight:600}.tb .r{text-align:right;white-space:nowrap}.tb tfoot td{font-weight:800;border-bottom:0}
 .pk{display:flex;align-items:center;gap:7px;width:max-content;margin-top:8px;min-height:36px;padding:0 14px 0 8px;border:0;border-radius:999px;background:var(--surf2);color:var(--ink);font:inherit;font-size:13px;font-weight:800;cursor:pointer}.pk::before{content:'+';display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--surf);color:var(--ink3);font-size:14px;line-height:1}.pk.on{background:var(--dark);color:var(--ondark)}.pk.on::before{content:'✓';background:var(--ondark);color:var(--dark);font-size:11px}
 .bld{margin-top:10px}.bld h3{margin:0 0 8px;font-size:16px;font-weight:800}
@@ -399,17 +399,19 @@ const ZL = { apzimejums: 'Zemes vienības apzīmējums', platiba_m2: 'Zemes plat
 const BL = { apzimejums: 'Apzīmējums', lietosanas_veids: 'Lietošanas veids', virszemes_stavi: 'Virszemes stāvi', pazemes_stavi: 'Pazemes stāvi', kopplatiba_m2: 'Kopplatība, m²', apbuves_laukums_m2: 'Apbūves laukums, m²',
   buvtilpums_m3: 'Būvtilpums, m³', dzivokli: 'Dzīvokļi', telpu_grupas: 'Telpu grupas', ekspluatacijas_gads: 'Ekspluatācijā', arsienu_materials: 'Ārsienas', jumta_segums: 'Jumta segums', nolietojums_proc: 'Nolietojums, %' };
 const val = (v, k) => v == null || v === '' ? null : typeof v === 'number' ? (/gads/.test(k) ? String(v) : nf(v)) : String(v);
-const kvs = (obj, L) => Object.keys(L).map(k => { const v = val(obj && obj[k], k); return v == null ? '' : `<div><span>${L[k]}</span><b>${esc(v)}</b></div>`; }).join('');
+// gari teksti un gari kodi (apzīmējums) — dubults platums, lai nelūzt pa vidu
+const wide = (v) => { v = String(v); return v.length > 22 || (!/\s/.test(v) && v.length > 12); };
+const kvs = (obj, L) => Object.keys(L).map(k => { const v = val(obj && obj[k], k); return v == null ? '' : `<div${wide(v) ? ' class="w2"' : ''}><span>${L[k]}</span><b>${esc(v)}</b></div>`; }).join('');
 function kadHtml(d) {
   d = d || {};
   const top = kvs(d, KL) + kvs(d.zeme || {}, ZL);
-  const B = (Array.isArray(d.buves) ? d.buves : []).map((b, i) => `<div class="bld card" style="padding:14px"><h3>${esc(b.nosaukums || 'Būve ' + (i + 1))}</h3><div class="kv">${kvs(b, BL) || '<div><span>Dati</span><b>—</b></div>'}</div></div>`).join('');
+  const B = (Array.isArray(d.buves) ? d.buves : []).map((b, i) => `<div class="bld"><h3>${esc(b.nosaukums || 'Būve ' + (i + 1))}</h3><div class="kv">${kvs(b, BL) || '<div><span>Dati</span><b>—</b></div>'}</div></div>`).join('');
   const T0 = Array.isArray(d.telpas) ? d.telpas : parseTelpas(d.citi && d.citi['Koplietošanas telpas']);
   const G0 = Array.isArray(d.grupas) ? d.grupas : []; G0.forEach((g, i) => { g._i = i; });
   const T = T0.filter(t => !isPark(t.nosaukums)), G = G0.filter(g => !gPark(g));
   const TP = T0.filter(t => isPark(t.nosaukums)), GP = G0.filter(gPark);
   const skip = (k) => k === 'Koplietošanas telpas' || (k === 'Citas telpu grupas' && G.length);
-  const C = d.citi && typeof d.citi === 'object' ? Object.keys(d.citi).filter(k => d.citi[k] != null && d.citi[k] !== '' && !skip(k)).slice(0, 40).map(k => `<div><span>${esc(k)}</span><b>${esc(typeof d.citi[k] === 'object' ? JSON.stringify(d.citi[k]) : d.citi[k])}</b></div>`).join('') : '';
+  const C = d.citi && typeof d.citi === 'object' ? Object.keys(d.citi).filter(k => d.citi[k] != null && d.citi[k] !== '' && !skip(k)).slice(0, 40).map(k => { const v = typeof d.citi[k] === 'object' ? JSON.stringify(d.citi[k]) : String(d.citi[k]); return `<div${wide(v) ? ' class="w2"' : ''}><span>${esc(k)}</span><b>${esc(v)}</b></div>`; }).join('') : '';
   return `<div class="kv">${top || '<div><span>Dati</span><b>—</b></div>'}</div>${B}${C ? `<div class="bld"><h3>Citi dati</h3><div class="kv">${C}</div></div>` : ''}${parkHtml(GP, TP)}${telpasTbl(T)}${grupasTbl(G)}`;
 }
 /* Autostāvvietas: telpu grupas / telpas, kas kadastrā ir stāvvietas, garāžas, brauktuves (lietošanas veids 1242, 1241…) */
