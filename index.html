@@ -217,7 +217,7 @@ function renderList() {
     <select data-f="s" aria-label="Pakalpojums"><option value="">Pakalpojumi: visi</option>${Object.keys(N).map(k => `<option value="${k}" ${F.s === k ? 'selected' : ''}>Ir: ${esc(N[k])}</option><option value="-${k}" ${F.s === '-' + k ? 'selected' : ''}>Nav: ${esc(N[k])}</option>`).join('')}</select>
     <select data-f="p" aria-label="Pārvaldnieks"><option value="">Visi pārvaldnieki</option><option value="-" ${F.p === '-' ? 'selected' : ''}>Bez pārvaldnieka</option>${PV.map(m => `<option ${F.p === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>
     ${ADM && L.length ? (() => { const n = S.sel.size, tgt = n ? n + ' atzīmētajiem' : L.length + ' objektiem';
-      return `<div class="afil"><button class="pill${S.selOn ? ' dk' : ''}" id="selT"><span class="bx" aria-hidden="true">${S.selOn ? '✓' : ''}</span>${S.selOn ? 'Beigt atzīmēšanu' : 'Atzīmēt objektus'}</button>${S.selOn ? `<button class="pill" id="selAll">Atzīmēt redzamos (${L.length})</button>${n ? `<button class="pill" id="selClr">Notīrīt (${n})</button>` : ''}${n >= 2 ? `<button class="pill dk" id="selJoin">Apvienot ${n} objektus</button>` : ''}` : ''}</div>
+      return `<div class="afil"><button class="pill${S.selOn ? ' dk' : ''}" id="selT"><span class="bx" aria-hidden="true">${S.selOn ? '✓' : ''}</span>${S.selOn ? 'Beigt atzīmēšanu' : 'Atzīmēt objektus'}</button>${S.selOn ? `<button class="pill" id="selAll">Atzīmēt redzamos (${L.length})</button>${n ? `<button class="pill" id="selClr">Notīrīt (${n})</button>` : ''}` : ''}<button class="pill${n >= 2 ? ' dk' : ''}" id="selJoin">${n >= 2 ? 'Apvienot ' + n + ' objektus' : '⧉ Apvienot objektus'}</button></div>
       <div class="afil"><button class="pill" data-bulk="mgr">Vadītājs ${tgt}</button><button class="pill" data-bulk="parv">Pārvaldnieks ${tgt}</button><button class="pill" data-bulk="svc">Pakalpojumi ${tgt}</button></div>`; })() : ''}`;
   const PT = S.D.parts || {}, isC = (o) => !!PT[o.anorm], hasK = (o) => !!(o.kad_nr || o.kad_t);
   const houses = O.filter(o => !isC(o)), withKad = houses.filter(hasK).length, KS = new Set(O.filter(hasK).map(o => o.anorm));
@@ -239,7 +239,8 @@ function renderList() {
   if ($('selT')) $('selT').onclick = () => { S.selOn = !S.selOn; if (!S.selOn) S.sel.clear(); renderList(); };
   if ($('selAll')) $('selAll').onclick = () => { L.forEach(o => S.sel.add(o.anorm)); renderList(); };
   if ($('selClr')) $('selClr').onclick = () => { S.sel.clear(); renderList(); };
-  if ($('selJoin')) $('selJoin').onclick = () => joinObjs(O.filter(o => S.sel.has(o.anorm)));
+  if ($('selJoin')) $('selJoin').onclick = () => { if (S.sel.size >= 2) return joinObjs(O.filter(o => S.sel.has(o.anorm)));
+    if (!S.selOn) { S.selOn = true; renderList(); } toast('Atzīmējiet mājas, kuras apvienot (vismaz 2), un spiediet «Apvienot» vēlreiz'); };
   $('oF').onchange = (e) => { const el = e.target.closest('[data-f]'); if (el) { S.F[el.dataset.f] = el.value; renderList(); } };
   if ($('oNew')) $('oNew').onclick = () => newObj();
   $('view').querySelectorAll('[data-bulk]').forEach(b => b.onclick = () => bulk(b.dataset.bulk, S.sel.size ? O.filter(o => S.sel.has(o.anorm)) : S.L.slice()));
