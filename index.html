@@ -48,6 +48,9 @@ button{cursor:pointer}
 .list{display:flex;flex-direction:column;gap:8px}
 .obj{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:var(--surf);border:0;width:100%;text-align:left;color:var(--ink)}
 .obj .n{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--clay)}
+.obj .ck{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;flex:none;background:var(--surf2);border:2px solid var(--ink3);font-size:20px;font-weight:900;color:transparent}
+.obj.on{box-shadow:inset 0 0 0 2px var(--ink)}.obj.on .ck{background:var(--ink);border-color:var(--ink);color:var(--surf)}
+.afil .pill.dk{background:var(--ink);color:var(--surf)}
 .obj .tx{flex:1;min-width:0}.obj b{display:block;font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.obj span{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip{flex:none;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px;background:var(--surf2);white-space:nowrap}
 .chip.ok{background:var(--mint);color:var(--ok)}.chip.w{background:var(--sand);color:var(--warn)}.chip.bad{background:var(--rose);color:var(--bad)}
@@ -144,7 +147,7 @@ const API = 'https://vaitkevix.cloud/sh/api/ml', PINK = 'shd_pin';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
-const S = { pin: ls.get(PINK) || '', tab: 'list', q: '', D: null, obj: null, otab: 'info', hf: '', imp: null, F: {}, M: null };
+const S = { pin: ls.get(PINK) || '', tab: 'list', q: '', D: null, obj: null, otab: 'info', hf: '', imp: null, F: {}, M: null, selOn: false, sel: new Set() };
 const RW = { admin: 3, vaditajs: 2, skatitajs: 0 };
 const can = (r) => (RW[(S.D && S.D.me.role) || ''] || 0) >= RW[r];
 const lvS = (d) => /^\d{4}-\d{2}-\d{2}/.test(d || '') ? (+d.slice(8, 10)) + '.' + d.slice(5, 7) + '.' : esc(d || '');
@@ -212,11 +215,14 @@ function renderList() {
     ${can('vaditajs') ? `<select data-f="k" aria-label="Piekļuve"><option value="">Piekļuve: visi</option><option value="+" ${F.k === '+' ? 'selected' : ''}>Ar piekļuvi</option><option value="-" ${F.k === '-' ? 'selected' : ''}>Bez piekļuves</option></select>` : ''}
     <select data-f="s" aria-label="Pakalpojums"><option value="">Pakalpojumi: visi</option>${Object.keys(N).map(k => `<option value="${k}" ${F.s === k ? 'selected' : ''}>Ir: ${esc(N[k])}</option><option value="-${k}" ${F.s === '-' + k ? 'selected' : ''}>Nav: ${esc(N[k])}</option>`).join('')}</select>
     <select data-f="p" aria-label="Pārvaldnieks"><option value="">Visi pārvaldnieki</option><option value="-" ${F.p === '-' ? 'selected' : ''}>Bez pārvaldnieka</option>${PV.map(m => `<option ${F.p === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>
-    ${ADM && L.length ? `<div class="afil"><button class="pill" data-bulk="mgr">Vadītājs ${L.length} objektiem</button><button class="pill" data-bulk="parv">Pārvaldnieks ${L.length} objektiem</button><button class="pill" data-bulk="svc">Pakalpojumi ${L.length} objektiem</button></div>` : ''}`;
+    ${ADM && L.length ? (() => { const n = S.sel.size, tgt = n ? n + ' atzīmētajiem' : L.length + ' objektiem';
+      return `<div class="afil"><button class="pill${S.selOn ? ' dk' : ''}" id="selT">${S.selOn ? '✓ Atzīmēšana' : '☐ Atzīmēt objektus'}</button>${S.selOn ? `<button class="pill" id="selAll">Atzīmēt redzamos (${L.length})</button>${n ? `<button class="pill" id="selClr">Notīrīt (${n})</button>` : ''}` : ''}</div>
+      <div class="afil"><button class="pill" data-bulk="mgr">Vadītājs ${tgt}</button><button class="pill" data-bulk="parv">Pārvaldnieks ${tgt}</button><button class="pill" data-bulk="svc">Pakalpojumi ${tgt}</button></div>`; })() : ''}`;
   const PT = S.D.parts || {}, isC = (o) => !!PT[o.anorm], hasK = (o) => !!(o.kad_nr || o.kad_t);
   const houses = O.filter(o => !isC(o)), withKad = houses.filter(hasK).length, KS = new Set(O.filter(hasK).map(o => o.anorm));
   const row = (o) => { const P = PT[o.anorm];
-    return `<button class="obj" data-a="${esc(o.anorm)}"><span class="n">${HOUSE}</span>
+    const ck = S.selOn && ADM, on = ck && S.sel.has(o.anorm);
+    return `<button class="obj${on ? ' on' : ''}" data-a="${esc(o.anorm)}"${ck ? ` aria-pressed="${on}"` : ''}>${ck ? '<span class="ck">✓</span>' : `<span class="n">${HOUSE}</span>`}
       <span class="tx"><b${P ? ' style="white-space:normal"' : ''}>${esc(o.adrese)}</b><span>${P ? `Apvienots · ${P.length} ${P.length === 1 ? 'māja' : 'mājas'} · kadastrs ${P.filter(x => KS.has(x.anorm)).length}/${P.length}` : esc(o.grupa || '') + (o.vaditajs ? ' · ' + esc(o.vaditajs) : '') + (sv(o).parv ? ' · 🏢 ' + esc(sv(o).parv) : '') + (o.pk ? ' · 🔑' : '')}</span></span>
       ${P ? '' : hasK(o) ? `<span class="chip ok">${o.kad_nr ? esc(o.kad_nr) : 'Kadastrs ✓'}</span>` : '<span class="chip">nav kadastra</span>'}${o.docs ? `<span class="chip">${o.docs} dok.</span>` : ''}</button>`; };
   const LH = L.filter(o => !isC(o)), LC = L.filter(isC);
@@ -227,10 +233,14 @@ function renderList() {
     <div class="list">${LH.slice(0, 300).map(row).join('') || (LC.length ? '' : '<div class="empty">Nekas nav atrasts</div>')}</div>
     ${LC.length ? `<div class="sec"><h2>Apvienotie objekti <small style="font-size:14px;color:var(--ink3)">${LC.length}</small></h2></div><p class="hint" style="margin:-4px 0 10px 4px">Vairākas mājas zem vienas adreses (līgums, klients, grafiki). Kadastrs — katrai mājai atsevišķi.</p><div class="list">${LC.slice(0, 300).map(row).join('')}</div>` : ''}`;
   const qi = $('q'); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderList(); const n = $('q'); n.focus(); n.setSelectionRange(p, p); };
-  $('view').querySelectorAll('.list').forEach(l => l.onclick = (e) => { const b = e.target.closest('[data-a]'); if (b) openObj(b.dataset.a); });
+  $('view').querySelectorAll('.list').forEach(l => l.onclick = (e) => { const b = e.target.closest('[data-a]'); if (!b) return;
+    if (S.selOn && ADM) { const a = b.dataset.a; S.sel.has(a) ? S.sel.delete(a) : S.sel.add(a); const y = scrollY; renderList(); scrollTo(0, y); } else openObj(b.dataset.a); });
+  if ($('selT')) $('selT').onclick = () => { S.selOn = !S.selOn; if (!S.selOn) S.sel.clear(); renderList(); };
+  if ($('selAll')) $('selAll').onclick = () => { L.forEach(o => S.sel.add(o.anorm)); renderList(); };
+  if ($('selClr')) $('selClr').onclick = () => { S.sel.clear(); renderList(); };
   $('oF').onchange = (e) => { const el = e.target.closest('[data-f]'); if (el) { S.F[el.dataset.f] = el.value; renderList(); } };
   if ($('oNew')) $('oNew').onclick = () => newObj();
-  $('view').querySelectorAll('[data-bulk]').forEach(b => b.onclick = () => bulk(b.dataset.bulk, S.L.slice()));
+  $('view').querySelectorAll('[data-bulk]').forEach(b => b.onclick = () => bulk(b.dataset.bulk, S.sel.size ? O.filter(o => S.sel.has(o.anorm)) : S.L.slice()));
 }
 
 /* ---------- objekta lieta ---------- */
@@ -389,7 +399,7 @@ async function bulk(kind, L) {
         busy(b, 'Saglabā…'); const r = await call('objSvcBulk', { key, list: adr.map(a => ({ adrese: a, on })) }); toast((on ? 'Ieslēgts' : 'Izslēgts') + ': ' + N[key] + ' · ' + r.n + ' objekti'); }
       else { const v = $('bV').value; if (!confirm((v ? 'Iestatīt «' + v + '»' : 'Noņemt') + ' ' + L.length + ' objektiem?')) return; busy(b, 'Saglabā…');
         if (kind === 'mgr') await call('objMgrBulk', { list: adr, vaditajs: v }); else await call('objParvBulk', { parv: v, list: adr }); toast('Saglabāts · ' + L.length + ' objekti'); }
-      closeSheet(); S.M = null; await load();
+      closeSheet(); S.M = null; S.sel.clear(); S.selOn = false; await load();
     } catch (e) { unbusy(b); toast(e.message, 'err'); }
   };
 }
