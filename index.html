@@ -117,6 +117,7 @@ button{cursor:pointer}
 .back{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;font-weight:800;color:var(--ink2);padding:0;min-height:40px;margin:0 0 4px}
 </style>
 <style id="sh-polish">
+.afil select.on{background:var(--dark);color:var(--ondark)}
 @media (min-width:1000px){.list:not(:has(.stop)){display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:10px;align-items:start}}   /* datorā saraksti kolonnās (maršruts paliek secībā) */
 @media (hover:none) and (pointer:coarse){[data-tab="poga"],#kHow{display:none!important}}   /* Safari poga der tikai Mac *//* pieskāriena sajūta, iPhone pietuvinājums, samazināta kustība */
 button:not(:disabled):active{scale:.97}
@@ -216,10 +217,34 @@ function render() {
 function renderList() {
   const O = S.D.objects, q = S.q.toLowerCase(), F = S.F, SV = S.D.svc || {}, N = S.D.names || {};
   const sv = (o) => SV[o.anorm] || {}, has = (o, k) => !!sv(o)[k];
-  const L = O.filter(o => (!q || (o.adrese + ' ' + (o.kad_nr || '') + ' ' + (o.grupa || '') + ' ' + (o.vaditajs || '')).toLowerCase().indexOf(q) !== -1)
+  /* ēkas dati no kadastra (apvienotajiem — summa pa mājām) */
+  const PT0 = S.D.parts || {}, BY = {}; O.forEach(o => BY[o.anorm] = o);
+  const bs = (o) => { const P = PT0[o.anorm]; if (!P) return o; const r = { st: null, pz: null, dz: null, m2: null, gads: null, kad: false };
+    P.forEach(x => { const y = BY[x.anorm]; if (!y) return; if (y.kad_nr || y.kad_t) r.kad = true; if (y.st != null) r.st = Math.max(r.st || 0, y.st); if (y.pz != null) r.pz = Math.max(r.pz || 0, y.pz);
+      if (y.dz != null) r.dz = (r.dz || 0) + y.dz; if (y.m2 != null) r.m2 = (r.m2 || 0) + y.m2; if (y.gads) r.gads = r.gads ? Math.min(r.gads, y.gads) : y.gads; }); return r; };
+  const RG = { st: [['1-2', '1–2 stāvi', 1, 2], ['3-5', '3–5 stāvi', 3, 5], ['6-9', '6–9 stāvi', 6, 9], ['10+', '10+ stāvi', 10, 1e9]],
+    dz: [['0-20', 'līdz 20 dzīvokļiem', 0, 20], ['21-60', '21–60 dzīvokļi', 21, 60], ['61-120', '61–120 dzīvokļi', 61, 120], ['121+', '121+ dzīvokļi', 121, 1e9]],
+    gads: [['-1945', 'būvēta līdz 1945', 0, 1945], ['1946-1990', 'būvēta 1946–1990', 1946, 1990], ['1991-2010', 'būvēta 1991–2010', 1991, 2010], ['2011+', 'būvēta 2011+', 2011, 9999]] };
+  const inR = (k, v) => { if (!F[k]) return true; if (F[k] === '-') return !v; const r = RG[k].find(x => x[0] === F[k]); return !!r && v != null && v >= r[2] && v <= r[3]; };
+  const yn = (k, b) => !F[k] || (F[k] === '+' ? b : !b);
+  let L = O.filter(o => (!q || (o.adrese + ' ' + (o.kad_nr || '') + ' ' + (o.grupa || '') + ' ' + (o.vaditajs || '')).toLowerCase().indexOf(q) !== -1)
     && (!F.v || (F.v === '-' ? !o.vaditajs : o.vaditajs === F.v)) && (!F.g || o.grupa === F.g) && (!F.k || (F.k === '-' ? !o.pk : !!o.pk))
-    && (!F.s || (F.s[0] === '-' ? !has(o, F.s.slice(1)) : has(o, F.s))) && (!F.p || (F.p === '-' ? !sv(o).parv : sv(o).parv === F.p)));
+    && (!F.s || (F.s[0] === '-' ? !has(o, F.s.slice(1)) : has(o, F.s))) && (!F.p || (F.p === '-' ? !sv(o).parv : sv(o).parv === F.p))
+    && (() => { const b = bs(o); return inR('st', b.st) && inR('dz', b.dz) && inR('gads', b.gads) && yn('kd', PT0[o.anorm] ? b.kad : !!(o.kad_nr || o.kad_t)) && yn('dc', o.docs > 0) && yn('pz', b.pz > 0)
+      && (!F.ap || (F.ap === 'c' ? !!PT0[o.anorm] : !PT0[o.anorm])); })());
+  if (F.so) { const k = { dz: 'dz', st: 'st', m2: 'm2', g: 'gads', 'g-': 'gads' }[F.so];
+    L = L.slice().sort(F.so === 'a' ? (a, b) => a.adrese.localeCompare(b.adrese, 'lv', { numeric: true }) : F.so === 'g-' ? (a, b) => (bs(a)[k] || 9999) - (bs(b)[k] || 9999) : (a, b) => (bs(b)[k] || 0) - (bs(a)[k] || 0)); }
   S.L = L;
+  const bm = (o) => { const b = bs(o), m = [b.st ? b.st + ' st.' : '', b.dz ? b.dz + ' dz.' : '', b.gads ? b.gads + '.' : ''].filter(Boolean).join(' · '); return m ? ' · ' + m : ''; };
+  const nX = ['st', 'dz', 'gads', 'kd', 'dc', 'pz', 'ap', 'so'].filter(k => F[k]).length, nAll = Object.keys(F).filter(k => F[k]).length, open = S.more || nX;
+  const opt = (k, v, l) => `<option value="${v}" ${F[k] === v ? 'selected' : ''}>${l}</option>`, rs = (k, l, a) => `<select data-f="${k}" aria-label="${a}"><option value="">${l}</option>${RG[k].map(r => opt(k, r[0], r[1])).join('')}${opt(k, '-', 'nav datu')}</select>`;
+  const more = `<div class="afil"><button class="pill${nX ? ' dk' : ''}" id="fMore">${open ? '− Mazāk filtru' : '+ Vairāk filtru'}${nX ? ' · ' + nX : ''}</button>${nAll ? '<button class="pill" id="fClr">Notīrīt filtrus</button>' : ''}</div>
+    ${open ? `<div class="afil" id="oF2">${rs('st', 'Stāvi: visi', 'Stāvi')}${rs('dz', 'Dzīvokļi: visi', 'Dzīvokļi')}${rs('gads', 'Būvgads: visi', 'Būvgads')}
+      <select data-f="kd" aria-label="Kadastrs"><option value="">Kadastrs: visi</option>${opt('kd', '+', 'Ar kadastra datiem')}${opt('kd', '-', 'Bez kadastra datiem')}</select>
+      <select data-f="dc" aria-label="Dokumenti"><option value="">Dokumenti: visi</option>${opt('dc', '+', 'Ar dokumentiem')}${opt('dc', '-', 'Bez dokumentiem')}</select>
+      <select data-f="pz" aria-label="Pazemes stāvs"><option value="">Pagrabs: visi</option>${opt('pz', '+', 'Ar pazemes stāvu')}${opt('pz', '-', 'Bez pazemes stāva')}</select>
+      <select data-f="ap" aria-label="Apvienotie"><option value="">Mājas un apvienotie</option>${opt('ap', 'h', 'Tikai atsevišķas mājas')}${opt('ap', 'c', 'Tikai apvienotie')}</select>
+      <select data-f="so" aria-label="Kārtot"><option value="">Kārtot: kā sarakstā</option>${opt('so', 'a', 'Adrese A–Z')}${opt('so', 'dz', 'Vairāk dzīvokļu')}${opt('so', 'st', 'Vairāk stāvu')}${opt('so', 'm2', 'Lielāka platība')}${opt('so', 'g', 'Jaunākās mājas')}${opt('so', 'g-', 'Vecākās mājas')}</select></div>` : ''}`;
   const VM = [...new Set(O.map(o => o.vaditajs).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'lv')), GR = [...new Set(O.map(o => o.grupa).filter(Boolean))].sort();
   const PV = [...new Set(Object.values(SV).map(x => x.parv).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'lv')), ADM = can('admin');
   const filt = `<div class="afil" id="oF"><select data-f="v" aria-label="Vadītājs"><option value="">Visi vadītāji</option><option value="-" ${F.v === '-' ? 'selected' : ''}>Bez vadītāja</option>${VM.map(m => `<option ${F.v === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
@@ -227,6 +252,7 @@ function renderList() {
     ${can('vaditajs') ? `<select data-f="k" aria-label="Piekļuve"><option value="">Piekļuve: visi</option><option value="+" ${F.k === '+' ? 'selected' : ''}>Ar piekļuvi</option><option value="-" ${F.k === '-' ? 'selected' : ''}>Bez piekļuves</option></select>` : ''}
     <select data-f="s" aria-label="Pakalpojums"><option value="">Pakalpojumi: visi</option>${Object.keys(N).map(k => `<option value="${k}" ${F.s === k ? 'selected' : ''}>Ir: ${esc(N[k])}</option><option value="-${k}" ${F.s === '-' + k ? 'selected' : ''}>Nav: ${esc(N[k])}</option>`).join('')}</select>
     <select data-f="p" aria-label="Pārvaldnieks"><option value="">Visi pārvaldnieki</option><option value="-" ${F.p === '-' ? 'selected' : ''}>Bez pārvaldnieka</option>${PV.map(m => `<option ${F.p === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select></div>
+    ${more}
     ${ADM && L.length ? (() => { const n = S.sel.size, tgt = n ? n + ' atzīmētajiem' : L.length + ' objektiem';
       return `<div class="afil"><button class="pill${S.selOn ? ' dk' : ''}" id="selT"><span class="bx" aria-hidden="true">${S.selOn ? '✓' : ''}</span>${S.selOn ? 'Beigt atzīmēšanu' : 'Atzīmēt objektus'}</button>${S.selOn ? `<button class="pill" id="selAll">Atzīmēt redzamos (${L.length})</button>${n ? `<button class="pill" id="selClr">Notīrīt (${n})</button>` : ''}` : ''}<button class="pill${n >= 2 ? ' dk' : ''}" id="selJoin">${n >= 2 ? 'Apvienot ' + n + ' objektus' : '⧉ Apvienot objektus'}</button></div>
       <div class="afil"><button class="pill" data-bulk="mgr">Vadītājs ${tgt}</button><button class="pill" data-bulk="parv">Pārvaldnieks ${tgt}</button><button class="pill" data-bulk="svc">Pakalpojumi ${tgt}</button></div>`; })() : ''}`;
@@ -235,7 +261,7 @@ function renderList() {
   const row = (o) => { const P = PT[o.anorm];
     const ck = S.selOn && ADM, on = ck && S.sel.has(o.anorm);
     return `<button class="obj${on ? ' on' : ''}" data-a="${esc(o.anorm)}"${ck ? ` aria-pressed="${on}"` : ''}>${ck ? '<span class="ck">✓</span>' : `<span class="n">${HOUSE}</span>`}
-      <span class="tx"><b${P ? ' style="white-space:normal"' : ''}>${esc(o.adrese)}</b><span>${P ? `Apvienots · ${P.length} ${P.length === 1 ? 'māja' : 'mājas'} · kadastrs ${P.filter(x => KS.has(x.anorm)).length}/${P.length}` : esc(o.grupa || '') + (o.vaditajs ? ' · ' + esc(o.vaditajs) : '') + (sv(o).parv ? ' · 🏢 ' + esc(sv(o).parv) : '') + (o.pk ? ' · 🔑' : '')}</span></span>
+      <span class="tx"><b${P ? ' style="white-space:normal"' : ''}>${esc(o.adrese)}</b><span>${P ? `Apvienots · ${P.length} ${P.length === 1 ? 'māja' : 'mājas'} · kadastrs ${P.filter(x => KS.has(x.anorm)).length}/${P.length}` : esc(o.grupa || '') + (o.vaditajs ? ' · ' + esc(o.vaditajs) : '') + (sv(o).parv ? ' · 🏢 ' + esc(sv(o).parv) : '') + (o.pk ? ' · 🔑' : '')}${bm(o)}</span></span>
       ${P ? '' : hasK(o) ? `<span class="chip ok">${o.kad_nr ? esc(o.kad_nr) : 'Kadastrs ✓'}</span>` : '<span class="chip">nav kadastra</span>'}${o.docs ? `<span class="chip">${o.docs} dok.</span>` : ''}</button>`; };
   const LH = L.filter(o => !isC(o)), LC = L.filter(isC);
   $('view').innerHTML = `<h1 class="pt">Objekti</h1>
@@ -252,7 +278,10 @@ function renderList() {
   if ($('selClr')) $('selClr').onclick = () => { S.sel.clear(); renderList(); };
   if ($('selJoin')) $('selJoin').onclick = () => { if (S.sel.size >= 2) return joinObjs(O.filter(o => S.sel.has(o.anorm)));
     if (!S.selOn) { S.selOn = true; renderList(); } toast('Atzīmējiet mājas, kuras apvienot (vismaz 2), un spiediet «Apvienot» vēlreiz'); };
-  $('oF').onchange = (e) => { const el = e.target.closest('[data-f]'); if (el) { S.F[el.dataset.f] = el.value; renderList(); } };
+  $('view').querySelectorAll('#oF, #oF2').forEach(x => x.onchange = (e) => { const el = e.target.closest('[data-f]'); if (el) { S.F[el.dataset.f] = el.value; renderList(); } });
+  $('fMore').onclick = () => { S.more = !(S.more || ['st', 'dz', 'gads', 'kd', 'dc', 'pz', 'ap', 'so'].some(k => S.F[k])); if (!S.more) ['st', 'dz', 'gads', 'kd', 'dc', 'pz', 'ap', 'so'].forEach(k => delete S.F[k]); renderList(); };
+  $('view').querySelectorAll('select[data-f]').forEach(x => x.classList.toggle('on', !!x.value));   // aktīvais filtrs — tumšs
+  if ($('fClr')) $('fClr').onclick = () => { S.F = {}; S.q = ''; renderList(); };
   if ($('oNew')) $('oNew').onclick = () => newObj();
   $('view').querySelectorAll('[data-bulk]').forEach(b => b.onclick = () => bulk(b.dataset.bulk, S.sel.size ? O.filter(o => S.sel.has(o.anorm)) : S.L.slice()));
 }
