@@ -47,6 +47,7 @@ button{cursor:pointer}
 .seg button{flex:1 0 auto;min-height:40px;padding:0 16px;border:0;border-radius:var(--r-pill,999px);background:transparent;font-size:14px;font-weight:800;white-space:nowrap}
 .seg button.on{background:var(--dark);color:var(--ondark)}
 @media(max-width:480px){.seg{gap:2px;padding:4px}.seg button{padding:0 10px;font-size:13px}}
+@media(max-width:420px){#otab button{padding:0 7px;font-size:12.5px}}
 .list{display:flex;flex-direction:column;gap:8px}
 .obj{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-lg,20px);background:var(--surf);border:0;width:100%;text-align:left;color:var(--ink)}
 .obj .n{width:40px;height:40px;border-radius:var(--r-md,14px);display:grid;place-items:center;flex:none;background:var(--clay)}
@@ -86,6 +87,12 @@ button{cursor:pointer}
 .sheet{width:min(640px,100%);max-height:92vh;overflow:auto;background:var(--bg);border-radius:var(--r-xl,28px) var(--r-xl,28px) 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
 @media(min-width:700px){.sheet{border-radius:var(--r-xl,28px)}}
 .sheet .hd{display:flex;align-items:center;gap:10px;margin:0 0 14px}.sheet .hd h3{margin:0;flex:1;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.kont,.cm{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--ink) 8%,transparent)}.kont:first-child,.cm:first-child{border-top:0}
+.kont .tx,.cm .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.kont .tx b,.cm .tx b{font-weight:800;overflow-wrap:anywhere;white-space:pre-wrap}.kont .tx>span,.cm .tx>span{font-size:13px;font-weight:700;color:var(--ink3);overflow-wrap:anywhere}
+.kont .lnk{display:flex;flex-wrap:wrap;gap:4px 12px}.kont .lnk a{color:var(--ink);font-weight:800;min-height:32px;display:inline-flex;align-items:center;overflow-wrap:anywhere}
+.cm .d{flex:none;width:44px;font-weight:800;text-align:center}.cm .d small{display:block;font-size:11px;color:var(--ink3)}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}
+.row2c{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.row2c.b{display:flex;flex-wrap:wrap;gap:8px}.row2c.b .pill{flex:1 1 auto}
 .f{margin:0 0 12px}.f label,.f .lb{display:block;font-size:13px;font-weight:800;color:var(--ink2);margin:0 0 6px 4px}
 .f input,.f select,.f textarea{width:100%;height:48px;border:0;border-radius:var(--r-lg,20px);background:var(--surf);padding:0 16px;font-size:16px;font-weight:700}
 .f textarea{height:auto;min-height:160px;padding:12px 16px;font-size:14px;font-weight:600}
@@ -294,11 +301,11 @@ async function openObj(a) {
 function renderObj() {
   const R = S.obj, o = R.obj;
   $('view').innerHTML = `<button class="back" id="back">‹ Visi objekti</button><h1 class="pt">${esc(o.adrese)}</h1>
-    <div class="seg" id="otab">${[['info', 'Objekts'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="seg" id="otab">${[['info', 'Objekts'], ['kont', 'Kontakti'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div id="opane"></div>`;
   $('back').onclick = () => { S.obj = null; render(); };
   $('otab').onclick = (e) => { const b = e.target.closest('[data-o]'); if (b) { S.otab = b.dataset.o; renderObj(); } };
-  ({ info: paneInfo, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
+  ({ info: paneInfo, kont: paneKont, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
 }
 
 /* ---------- Objekts: pamatdati un objekta kartīte (agrāk portāla Administrēšana → Objekti) ---------- */
@@ -610,6 +617,63 @@ async function openDoc(id, d) {
     if (w) w.location.href = u; else { const a = document.createElement('a'); a.href = u; a.download = (d && d.nosaukums) || 'dokuments'; document.body.appendChild(a); a.click(); a.remove(); }
     setTimeout(() => URL.revokeObjectURL(u), 120000);
   } catch (e) { if (w) w.close(); toast(e.message, 'err'); }
+}
+/* ---------- C7 kontakti un saziņas žurnāls; E8 mājas lapa iedzīvotājiem (atslēga, QR, brīdinājumi) ---------- */
+let QRL = null;
+const qrLib = () => QRL || (QRL = new Promise((ok) => { if (window.qrcode) return ok(true); const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; sc.onload = () => ok(true); sc.onerror = () => { QRL = null; ok(false); }; document.head.appendChild(sc); }));
+const qrSvg = (text) => { try { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { return ''; } };
+const majaUrl = (t) => 'https://vaitkevix.cloud/sh/maja.html#' + t;
+const LOMAS = ['Mājas vecākais', 'Valdes loceklis', 'Pārvaldnieks', 'Iedzīvotājs', 'Apsaimniekotājs', 'Cits'];
+function paneKont() {
+  const R = S.obj, p = $('opane'), ED = !!R.ed, C = R.contacts || [], M = R.maja, t = new Date().toISOString().slice(0, 10);
+  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Kontakti</b>${ED ? '<button class="pill dk" id="kAdd">+ Kontakts</button>' : ''}</div>
+      <div class="list">${C.map(c => `<div class="kont"><span class="tx"><b>${esc(c.vards)}</b><span>${esc(c.loma || '')}${c.piezime ? ' · ' + esc(c.piezime) : ''}</span>
+        <span class="lnk">${c.tel ? `<a href="tel:${esc(c.tel.replace(/\s/g, ''))}">${esc(c.tel)}</a>` : ''}${c.epasts ? `<a href="mailto:${esc(c.epasts)}">${esc(c.epasts)}</a>` : ''}</span></span>
+        ${ED ? `<button class="pill" data-ke="${esc(c.id)}">Labot</button>` : ''}</div>`).join('') || '<div class="empty" style="padding:10px 0">Kontaktu vēl nav</div>'}</div></div>
+    ${R.comm && (ED || R.comm.length) ? `<div class="card" style="margin:0 0 12px"><b>Saziņas žurnāls</b>
+      ${ED ? `<div class="f" style="margin:10px 0 8px"><textarea id="cmT" maxlength="2000" style="min-height:80px" placeholder="Par ko bija saziņa — zvans, sapulce, e-pasts…"></textarea></div>
+        <div class="row2c"><div class="f"><label for="cmD">Datums</label><input id="cmD" type="date" value="${t}"></div><div class="f"><label for="cmA">Ar ko</label><input id="cmA" list="cmAL" maxlength="80" placeholder="vārds"><datalist id="cmAL">${C.map(c => `<option value="${esc(c.vards)}">`).join('')}</datalist></div></div>
+        <button class="pill dk" style="width:100%" id="cmGo">Pievienot ierakstu</button>` : ''}
+      <div class="list" style="margin-top:10px">${R.comm.map(x => `<div class="cm"><span class="d">${esc(lvS(x.datums))}<small>${esc(x.datums.slice(0, 4))}</small></span><span class="tx"><b>${esc(x.teksts)}</b><span>${esc(x.kas)}${x.ar ? ' · ar ' + esc(x.ar) : ''}</span></span></div>`).join('') || '<div class="empty" style="padding:10px 0">Ierakstu vēl nav</div>'}</div></div>` : ''}
+    ${M ? `<div class="card"><b>Mājas lapa iedzīvotājiem</b><p class="meta" style="margin:6px 0 10px">Publiska lapa: nākamo 30 dienu darbi un jūsu brīdinājumi. Bez vārdiem un kodiem. QR kodu izdrukājiet kāpņu telpai.</p>
+      ${M.token ? `<div class="f"><input readonly id="mjU" value="${esc(majaUrl(M.token))}" aria-label="Saite"></div><div class="row2c b"><button class="pill" id="mjC">Kopēt</button><button class="pill" id="mjO">Atvērt</button><button class="pill dk" id="mjQ">QR drukai</button>${ED ? '<button class="pill" id="mjR">Atsaukt</button>' : ''}</div>`
+        : ED ? '<button class="pill dk" style="width:100%" id="mjN">Izveidot saiti un QR</button>' : '<p class="meta">Saite vēl nav izveidota</p>'}
+      ${ED ? `<div class="f" style="margin:14px 0 8px"><label for="mjT">Brīdinājums iedzīvotājiem</label><textarea id="mjT" maxlength="500" style="min-height:80px" placeholder="piem. 3. decembrī no 9 līdz 14 nebūs ūdens"></textarea></div>
+        <div class="row2c"><div class="f"><label for="mjNo">Rādīt no</label><input id="mjNo" type="date"></div><div class="f"><label for="mjLi">Līdz</label><input id="mjLi" type="date"></div></div>
+        <button class="pill dk" style="width:100%" id="mjS">+ Pievienot brīdinājumu</button>` : ''}
+      <div class="list" id="mjL" style="margin-top:10px">${noticesHtml(M.notices, ED)}</div></div>` : ''}`;
+  const reload = async (tab) => { await openObj(R.obj.anorm); S.otab = tab || 'kont'; renderObj(); };
+  if ($('kAdd')) $('kAdd').onclick = () => kontSheet(null);
+  p.querySelectorAll('[data-ke]').forEach(b => b.onclick = () => kontSheet(C.find(c => c.id === b.dataset.ke)));
+  if ($('cmGo')) $('cmGo').onclick = async () => { const b = $('cmGo'); b.disabled = true; try { const r = await call('commAdd', { anorm: R.obj.anorm, teksts: $('cmT').value, datums: $('cmD').value, ar: $('cmA').value }); R.comm = r.comm; paneKont(); toast('Ieraksts pievienots'); } catch (e) { toast(e.message, 'err'); b.disabled = false; } };
+  const link = async (revoke) => { try { const r = await call('majaLink', { anorm: R.obj.anorm, revoke }); M.token = r.token || ''; paneKont(); } catch (e) { toast(e.message, 'err'); } };
+  if ($('mjN')) $('mjN').onclick = () => link(false);
+  if ($('mjR')) $('mjR').onclick = () => { if (confirm('Atsaukt saiti? Izdrukātais QR kods vairs nedarbosies.')) link(true); };
+  if ($('mjC')) $('mjC').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(majaUrl(M.token)) : Promise.reject()).then(() => toast('Saite nokopēta')).catch(() => { $('mjU').select(); toast('Iezīmēta — kopējiet'); });
+  if ($('mjO')) $('mjO').onclick = () => window.open(majaUrl(M.token), '_blank', 'noopener');
+  if ($('mjQ')) $('mjQ').onclick = async () => { const w = window.open('', '_blank'); if (!await qrLib()) { if (w) w.close(); return toast('QR modulis neielādējās', 'err'); }
+    const a = R.obj.adrese, html = `<!doctype html><html lang="lv"><head><meta charset="utf-8"><title>${esc(a)} — mājas darbi</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:30px;color:#17201c}h1{font-size:30px;margin:0 0 6px}p{font-size:18px;margin:6px 0}.q{width:300px;margin:24px auto}.q svg{width:100%;height:auto}small{color:#555}</style></head><body><div style="font-weight:800;letter-spacing:.08em;color:#0f6b5c">SELECTUM HOME</div><h1>${esc(a)}</h1><p><b>Plānotie darbi jūsu mājā</b> — pļaušana, logi, dārzs, stāvvietas, brīdinājumi</p><p>Планируемые работы в вашем доме</p><div class="q">${qrSvg(majaUrl(M.token))}</div><small>${esc(majaUrl(M.token))}</small><p style="margin-top:30px"><small>© VAITKEVIX, SIA</small></p><script>setTimeout(function(){print()},300)<\/script></body></html>`;
+    if (w) { w.document.write(html); w.document.close(); } };
+  if ($('mjS')) $('mjS').onclick = async () => { const tx = $('mjT').value.trim(); if (tx.length < 3) return toast('Ierakstiet tekstu', 'err');
+    try { await call('majaNoticeSave', { anorm: R.obj.anorm, teksts: tx, no: $('mjNo').value, lidz: $('mjLi').value }); await reload(); toast('Brīdinājums pievienots'); } catch (e) { toast(e.message, 'err'); } };
+  if ($('mjL')) $('mjL').onclick = async (e) => { const b = e.target.closest('[data-nd]'); if (!b) return; try { await call('majaNoticeDel', { id: b.dataset.nd }); await reload(); toast('Noņemts'); } catch (er) { toast(er.message, 'err'); } };
+}
+function noticesHtml(L, ED) {
+  return (L || []).map(n => `<div class="cm"><span class="tx"><b>${esc(n.teksts)}</b><span>${n.no ? 'no ' + esc(lvS(n.no)) : 'jau tagad'}${n.lidz ? ' līdz ' + esc(lvS(n.lidz)) : ''} · ${esc(n.kas)}</span></span>${ED ? `<button class="pill" data-nd="${esc(n.id)}">Noņemt</button>` : ''}</div>`).join('') || '<div class="meta">Aktīvu brīdinājumu nav</div>';
+}
+function kontSheet(c) {
+  const R = S.obj, x = c || {};
+  const sh = sheet(`<div class="hd"><h3>${c ? 'Kontakts' : 'Jauns kontakts'}</h3>${X}</div>
+    <div class="f"><label for="kV">Vārds, uzvārds</label><input id="kV" maxlength="80" value="${esc(x.vards || '')}"></div>
+    <div class="f"><label for="kL">Loma</label><input id="kL" list="kLL" maxlength="60" value="${esc(x.loma || '')}" placeholder="piem. mājas vecākais"><datalist id="kLL">${LOMAS.map(l => `<option value="${esc(l)}">`).join('')}</datalist></div>
+    <div class="f"><label for="kT">Tālrunis</label><input id="kT" type="tel" inputmode="tel" maxlength="30" value="${esc(x.tel || '')}"></div>
+    <div class="f"><label for="kE">E-pasts</label><input id="kE" type="email" inputmode="email" maxlength="120" value="${esc(x.epasts || '')}"></div>
+    <div class="f"><label for="kP">Piezīme</label><input id="kP" maxlength="300" value="${esc(x.piezime || '')}"></div>
+    <div class="row2c b">${c ? '<button class="pill" id="kDel">Noņemt</button>' : '<button class="pill" data-x>Atcelt</button>'}<button class="pill dk" id="kGo">Saglabāt</button></div>`);
+  $('kGo').onclick = async () => { const b = $('kGo'); b.disabled = true;
+    try { const r = await call('contactSave', { anorm: R.obj.anorm, c: { id: x.id || '', vards: $('kV').value, loma: $('kL').value, tel: $('kT').value, epasts: $('kE').value, piezime: $('kP').value } }); R.contacts = r.contacts; closeSheet(); renderObj(); toast('Saglabāts'); }
+    catch (e) { toast(e.message, 'err'); b.disabled = false; } };
+  if ($('kDel')) $('kDel').onclick = async () => { if (!confirm('Noņemt kontaktu?')) return; try { const r = await call('contactDel', { id: x.id }); R.contacts = r.contacts; closeSheet(); renderObj(); toast('Noņemts'); } catch (e) { toast(e.message, 'err'); } };
 }
 const APPN = { pl: 'Pļaušana', logi: 'Logi', darz: 'Dārzniecība', stav: 'Stāvvieta', sniegs: 'Sniegs', aizv: 'Aizvietošana', izv: 'Izvešana', kais: 'Kaisāmmat.' };
 const APPC = { pl: 'mint', logi: 'sky', darz: 'mint', stav: 'sand', sniegs: 'lilac', aizv: 'mint', izv: 'sand', kais: 'sky' };
