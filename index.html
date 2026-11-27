@@ -89,6 +89,10 @@ button{cursor:pointer}
 .sheet .hd{display:flex;align-items:center;gap:10px;margin:0 0 14px}.sheet .hd h3{margin:0;flex:1;font-size:20px;font-weight:800;letter-spacing:-.02em}
 .kont,.cm{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--ink) 8%,transparent)}.kont:first-child,.cm:first-child{border-top:0}
 .kont .tx,.cm .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.kont .tx b,.cm .tx b{font-weight:800;overflow-wrap:anywhere;white-space:pre-wrap}.kont .tx>span,.cm .tx>span{font-size:13px;font-weight:700;color:var(--ink3);overflow-wrap:anywhere}
+.kont.iek{align-items:flex-start;flex-wrap:wrap}.st2{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center}
+@media(max-width:600px){.kont.iek .st2{width:100%;justify-content:flex-start}}
+.skc{display:flex;align-items:flex-end;gap:4px;height:130px;margin:10px 0 0;padding-bottom:30px;position:relative}.skb{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.skb i{display:block;width:100%;max-width:34px;background:var(--sky);border-radius:6px 6px 2px 2px}.skb small{position:absolute;bottom:-18px;font-size:11px;font-weight:800;color:var(--ink2)}.skb span{position:absolute;bottom:-30px;font-size:10.5px;font-weight:700;color:var(--ink3);white-space:nowrap;display:none}
 .kont .lnk{display:flex;flex-wrap:wrap;gap:4px 12px}.kont .lnk a{color:var(--ink);font-weight:800;min-height:32px;display:inline-flex;align-items:center;overflow-wrap:anywhere}
 .cm .d{flex:none;width:44px;font-weight:800;text-align:center}.cm .d small{display:block;font-size:11px;color:var(--ink3)}
 .ch{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 6px}
@@ -301,11 +305,11 @@ async function openObj(a) {
 function renderObj() {
   const R = S.obj, o = R.obj;
   $('view').innerHTML = `<button class="back" id="back">‹ Visi objekti</button><h1 class="pt">${esc(o.adrese)}</h1>
-    <div class="seg" id="otab">${[['info', 'Objekts'], ['kont', 'Kontakti'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="seg" id="otab">${[['info', 'Objekts'], ['kont', 'Kontakti'], ['iek', 'Iekārtas' + ((R.iek || []).some(i => !i.nakama || i.nakama <= addD(30)) ? ' !' : '')], ['sk', 'Skaitītāji'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div id="opane"></div>`;
   $('back').onclick = () => { S.obj = null; render(); };
   $('otab').onclick = (e) => { const b = e.target.closest('[data-o]'); if (b) { S.otab = b.dataset.o; renderObj(); } };
-  ({ info: paneInfo, kont: paneKont, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
+  ({ info: paneInfo, kont: paneKont, iek: paneIek, sk: paneSk, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
 }
 
 /* ---------- Objekts: pamatdati un objekta kartīte (agrāk portāla Administrēšana → Objekti) ---------- */
@@ -677,14 +681,88 @@ function kontSheet(c) {
 }
 const APPN = { pl: 'Pļaušana', logi: 'Logi', darz: 'Dārzniecība', stav: 'Stāvvieta', sniegs: 'Sniegs', aizv: 'Aizvietošana', izv: 'Izvešana', kais: 'Kaisāmmat.' };
 const APPC = { pl: 'mint', logi: 'sky', darz: 'mint', stav: 'sand', sniegs: 'lilac', aizv: 'mint', izv: 'sand', kais: 'sky' };
+/* ---------- F-ml(1) iekārtas un apkopes ---------- */
+const addD = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+function paneIek() {
+  const R = S.obj, p = $('opane'), ED = !!R.ed, L = R.iek || [], t = addD(0);
+  const st = (i) => !i.pedeja ? ['Nav ievadīta', 'w'] : i.nakama < t ? ['Nokavēta ' + lvS(i.nakama), 'bad'] : i.nakama <= addD(30) ? ['Drīz ' + lvS(i.nakama), 'w'] : ['Nākamā ' + lvS(i.nakama) + ' ' + i.nakama.slice(0, 4), 'ok'];
+  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Iekārtas un apkopes</b>${ED ? '<button class="pill dk" id="iAdd">+ Iekārta</button>' : ''}</div>
+    <p class="meta" style="margin:4px 0 8px">Nākamā apkope = pēdējā + intervāls. Nokavētās un tuvāko 30 dienu apkopes redzamas portāla Panelī.</p>
+    <div class="list">${L.map(i => { const S2 = st(i), A = (R.apk || []).filter(a => a.iek === i.id).slice(0, 3);
+      return `<div class="kont iek"><span class="tx"><b>${esc(i.nosaukums)}</b><span>${esc(i.veids)} · ik ${i.intervals} mēn.${i.atbildigais ? ' · ' + esc(i.atbildigais) : ''}${i.pedeja ? ' · pēdējā ' + esc(lvS(i.pedeja)) + i.pedeja.slice(0, 4) : ''}</span>
+        ${i.dok ? `<span class="lnk">${/^https?:\/\//.test(i.dok) ? `<a href="${esc(i.dok)}" target="_blank" rel="noopener">Dokuments</a>` : esc(i.dok)}</span>` : ''}
+        ${A.length ? `<span class="meta" style="display:block">${A.map(a => esc(lvS(a.datums)) + a.datums.slice(0, 4) + (a.piezime ? ' — ' + esc(a.piezime) : '')).join(' · ')}</span>` : ''}</span>
+        <span class="st2"><span class="chip ${S2[1]}">${S2[0]}</span>${ED ? `<button class="pill dk" data-ia="${esc(i.id)}">Apkope veikta</button><button class="pill" data-ie="${esc(i.id)}">Labot</button>` : ''}</span></div>`; }).join('') || '<div class="empty" style="padding:10px 0">Iekārtu vēl nav — piem. lifts, siltummezgls, ugunsdzēšamie aparāti, vārti</div>'}</div></div>`;
+  if ($('iAdd')) $('iAdd').onclick = () => iekSheet(null);
+  p.querySelectorAll('[data-ie]').forEach(b => b.onclick = () => iekSheet(L.find(i => i.id === b.dataset.ie)));
+  p.querySelectorAll('[data-ia]').forEach(b => b.onclick = () => apkSheet(L.find(i => i.id === b.dataset.ia)));
+}
+function iekSheet(i) {
+  const R = S.obj, V = R.iekVeidi || ['Cits'];
+  const s = sheet(`<div class="hd"><h3>${i ? 'Labot iekārtu' : 'Jauna iekārta'}</h3>${X}</div>
+    <div class="f"><label for="iV">Veids</label><select id="iV">${V.map(v => `<option ${i && i.veids === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+    <div class="f"><label for="iN">Nosaukums</label><input id="iN" maxlength="100" value="${esc(i ? i.nosaukums : '')}" placeholder="Piem. Lifts 1. kāpņu telpā"></div>
+    <div class="row2c"><div class="f"><label for="iI">Apkope ik (mēneši)</label><input id="iI" type="number" min="1" max="120" inputmode="numeric" value="${i ? i.intervals : 12}"></div><div class="f"><label for="iP">Pēdējā apkope</label><input id="iP" type="date" value="${esc(i ? i.pedeja : '')}"></div></div>
+    <div class="f"><label for="iA">Atbildīgais (uzņēmums / persona)</label><input id="iA" maxlength="100" value="${esc(i ? i.atbildigais : '')}" placeholder="Piem. SIA Liftu serviss, 2xxxxxxx"></div>
+    <div class="f"><label for="iD">Dokuments (saite vai nr.)</label><input id="iD" maxlength="300" value="${esc(i ? i.dok : '')}" placeholder="Līgums, akts vai saite uz failu"></div>
+    <div class="f"><label for="iZ">Piezīme</label><input id="iZ" maxlength="500" value="${esc(i ? i.piezime : '')}"></div>
+    <div class="acts">${i ? '<button class="btn-lt" id="iOff">Noņemt</button>' : '<button class="btn-lt" data-x>Atcelt</button>'}<button class="btn-dk" id="iGo">Saglabāt</button></div>`);
+  const go = async (b, off) => { busy(b, '…'); try { await call('iekSave', { anorm: R.obj.anorm, i: { id: i ? i.id : '', veids: $('iV').value, nosaukums: $('iN').value, intervals: $('iI').value, pedeja: $('iP').value, atbildigais: $('iA').value, dok: $('iD').value, piezime: $('iZ').value, aktivs: !off } });
+    closeSheet(); toast(off ? 'Noņemts' : 'Saglabāts'); await openObj(R.obj.anorm); S.otab = 'iek'; renderObj(); } catch (e) { unbusy(b); toast(e.message, 'err'); } };
+  $('iGo').onclick = () => go($('iGo')); if ($('iOff')) $('iOff').onclick = () => { if (confirm('Noņemt iekārtu no reģistra? Vēsture paliek.')) go($('iOff'), true); };
+}
+function apkSheet(i) {
+  const R = S.obj; sheet(`<div class="hd"><h3>Apkope · ${esc(i.nosaukums)}</h3>${X}</div>
+    <div class="row2c"><div class="f"><label for="aD">Datums</label><input id="aD" type="date" max="${addD(0)}" value="${addD(0)}"></div><div class="f"><label for="aK">Kas veica</label><input id="aK" maxlength="100" value="${esc(i.atbildigais || '')}"></div></div>
+    <div class="f"><label for="aP">Piezīme</label><input id="aP" maxlength="500" placeholder="Piem. nomainīts filtrs; nākamreiz pārbaudīt…"></div>
+    <div class="f"><label for="aDo">Dokuments (akta nr. vai saite)</label><input id="aDo" maxlength="300"></div>
+    <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="aGo">Saglabāt apkopi</button></div>`);
+  $('aGo').onclick = async () => { const b = $('aGo'); busy(b, '…'); try { await call('iekApk', { id: i.id, datums: $('aD').value, kas: $('aK').value, piezime: $('aP').value, dok: $('aDo').value }); closeSheet(); toast('Apkope saglabāta'); await openObj(R.obj.anorm); S.otab = 'iek'; renderObj(); } catch (e) { unbusy(b); toast(e.message, 'err'); } };
+}
+/* ---------- F-ml(2) skaitītāju rādījumi — grafiks pa mēnešiem (patēriņš = starpība) ---------- */
+function shrinkImg(file, max) { return new Promise((res, rej) => { const img = new Image(), u = URL.createObjectURL(file); img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); res(c.toDataURL('image/jpeg', 0.82)); }; img.onerror = () => { URL.revokeObjectURL(u); rej(new Error('Neizdevās nolasīt bildi')); }; img.src = u; }); }
+function paneSk() {
+  const R = S.obj, p = $('opane'), ED = !!R.ed, L = R.skait || [], G = {};
+  L.forEach(r => { const k = r.veids + (r.nr ? ' · ' + r.nr : ''); (G[k] = G[k] || []).push(r); });
+  const chart = (rows) => { const A = rows.slice().sort((a, b) => a.datums.localeCompare(b.datums)), M = {};
+    for (let i = 1; i < A.length; i++) { const m = A[i].datums.slice(0, 7); M[m] = (M[m] || 0) + Math.max(0, A[i].radijums - A[i - 1].radijums); }
+    const ks = Object.keys(M).sort().slice(-12); if (!ks.length) return '<p class="meta">Patēriņa grafiks būs pēc otrā rādījuma</p>';
+    const mx = Math.max(...ks.map(k => M[k]), 1);
+    return `<div class="skc" role="img" aria-label="Patēriņš pa mēnešiem">${ks.map(k => `<div class="skb"><i style="height:${Math.max(2, Math.round(M[k] / mx * 100))}%" title="${esc(k)}: ${M[k].toLocaleString('lv-LV')}"></i><small>${esc(k.slice(5))}</small><span>${(Math.round(M[k] * 100) / 100).toLocaleString('lv-LV')}</span></div>`).join('')}</div>`; };
+  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Skaitītāju rādījumi</b>${ED ? '<button class="pill dk" id="sAdd">+ Rādījums</button>' : ''}</div></div>
+    ${Object.keys(G).sort().map(k => `<div class="card" style="margin:0 0 12px"><b>${esc(k)}</b>${chart(G[k])}
+      <div class="list" style="margin-top:8px">${G[k].slice(0, 12).map(r => `<div class="cm"><span class="d">${esc(lvS(r.datums))}<small>${esc(r.datums.slice(0, 4))}</small></span><span class="tx"><b>${(+r.radijums).toLocaleString('lv-LV')}</b><span>${esc(r.kas)}</span></span>${r.foto ? `<a href="https://vaitkevix.cloud/sh/api/img?sz=w1600&id=${encodeURIComponent(r.foto.split(',')[0])}" target="_blank" rel="noopener" class="pill">Bilde</a>` : ''}</div>`).join('')}</div></div>`).join('') || '<div class="empty">Rādījumu vēl nav</div>'}`;
+  if ($('sAdd')) $('sAdd').onclick = () => skSheet();
+}
+function skSheet() {
+  const R = S.obj, V = R.skVeidi || [], last = (R.skait || [])[0] || {}, P = [];
+  const s = sheet(`<div class="hd"><h3>Skaitītāja rādījums</h3>${X}</div>
+    <div class="f"><label for="kV">Skaitītājs</label><select id="kV">${V.map(v => `<option ${last.veids === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+    <div class="row2c"><div class="f"><label for="kN">Nr. (ja vairāki)</label><input id="kN" maxlength="40" value="${esc(last.nr || '')}"></div><div class="f"><label for="kD">Datums</label><input id="kD" type="date" value="${addD(0)}"></div></div>
+    <div class="f"><label for="kR">Rādījums</label><input id="kR" inputmode="decimal" placeholder="Piem. 12345,6"></div>
+    <div class="f"><span class="lb">Bilde (ieteicams)</span><input type="file" id="kF" accept="image/*" capture="environment"><span id="kFs" class="meta"></span></div>
+    <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="kGo">Saglabāt</button></div>`);
+  $('kF').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { P[0] = await shrinkImg(f, 1400); $('kFs').textContent = 'Bilde pievienota'; } catch (err) { toast(err.message, 'err'); } };
+  const go = async (force) => { const b = $('kGo'); busy(b, '…'); try { await call('skAdd', { anorm: R.obj.anorm, veids: $('kV').value, nr: $('kN').value, datums: $('kD').value, radijums: $('kR').value, photos: P, force }); closeSheet(); toast('Rādījums saglabāts'); await openObj(R.obj.anorm); S.otab = 'sk'; renderObj(); }
+    catch (e) { unbusy(b); if (/mazāks/.test(e.message) && confirm(e.message + '\n\nSaglabāt tomēr (piem. nomainīts skaitītājs)?')) return go(true); toast(e.message, 'err'); } };
+  $('kGo').onclick = () => go(false);
+}
+/* ---------- G3 «Kas ko mainīja» — audita ieraksti par šo objektu ---------- */
+function changesHtml() {
+  const C = S.obj.changes || [];
+  return `<div class="list">${C.map(c => `<div class="cm"><span class="d">${esc(lvS(c.laiks.slice(0, 10)))}<small>${esc(c.laiks.slice(11, 16))}</small></span><span class="tx"><b>${esc(c.lauks)}</b><span>${c.bija ? '<s>' + esc(String(c.bija).slice(0, 120)) + '</s> → ' : ''}${esc(String(c.kluva).slice(0, 200))}</span><span class="meta">${esc(c.kas)} · ${esc(c.modulis)}${c.objekts !== S.obj.obj.adrese ? ' · ' + esc(c.objekts) : ''}</span></span></div>`).join('') || '<div class="empty">Izmaiņu vēl nav</div>'}</div>`;
+}
 function paneHist() {
   const R = S.obj, HP = R.histParts || [];
+  if (S.hv === 'ch') { $('opane').innerHTML = `<div class="chips" id="hv" style="margin:0 0 8px"><button data-v="">Darbi</button><button data-v="ch" class="on">Izmaiņas · ${(R.changes || []).length}</button></div>` + changesHtml();
+    $('hv').onclick = (e) => { const b = e.target.closest('[data-v]'); if (b) { S.hv = b.dataset.v; paneHist(); } }; return; }
   const H = S.hp && HP.length ? R.hist.concat(HP).sort((a, b) => String(b.datums).localeCompare(String(a.datums))) : R.hist, apps = [...new Set(H.map(h => h.app))], L = H.filter(h => !S.hf || h.app === S.hf);
-  $('opane').innerHTML = (HP.length ? `<div class="chips" id="hp" style="margin:0 0 8px"><button data-p="" class="${S.hp ? '' : 'on'}">Tikai šis objekts</button><button data-p="1" class="${S.hp ? 'on' : ''}">+ sastāvdaļu darbi · ${HP.length}</button></div>` : '') + (apps.length > 1 ? `<div class="chips" id="hf" style="margin:0 0 12px"><button data-f="" class="${!S.hf ? 'on' : ''}">Visi · ${H.length}</button>${apps.map(a => `<button data-f="${a}" class="${S.hf === a ? 'on' : ''}">${APPN[a] || a}</button>`).join('')}</div>` : '') +
+  $('opane').innerHTML = ((R.changes || []).length ? `<div class="chips" id="hv" style="margin:0 0 8px"><button data-v="" class="on">Darbi</button><button data-v="ch">Izmaiņas · ${R.changes.length}</button></div>` : '') + (HP.length ? `<div class="chips" id="hp" style="margin:0 0 8px"><button data-p="" class="${S.hp ? '' : 'on'}">Tikai šis objekts</button><button data-p="1" class="${S.hp ? 'on' : ''}">+ sastāvdaļu darbi · ${HP.length}</button></div>` : '') + (apps.length > 1 ? `<div class="chips" id="hf" style="margin:0 0 12px"><button data-f="" class="${!S.hf ? 'on' : ''}">Visi · ${H.length}</button>${apps.map(a => `<button data-f="${a}" class="${S.hf === a ? 'on' : ''}">${APPN[a] || a}</button>`).join('')}</div>` : '') +
     `<div class="list">${L.map(h => `<div class="hist ${h.plan ? 'plan' : ''}"><span class="d">${lvS(h.datums)}<small>${esc(String(h.datums || '').slice(0, 4))}</small></span>
       <span class="tx"><b>${esc(h.name)}${h.part ? ' · ' + esc(h.part) : ''}</b><span>${esc(h.statuss || '')}${h.kas ? ' · ' + esc(h.kas) : ''}${h.teksts ? ' · ' + esc(h.teksts) : ''}</span>
       ${h.foto && h.foto.length ? `<span class="ph">${h.foto.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u.replace('sz=w1600', 'sz=w300'))}" alt="Bilde" loading="lazy" decoding="async"></a>`).join('')}</span>` : ''}</span>
       <span class="chip ${APPC[h.app] || ''}">${esc(APPN[h.app] || h.app)}</span></div>`).join('') || '<div class="empty">Darbu vēl nav</div>'}</div>`;
+  if ($('hv')) $('hv').onclick = (e) => { const b = e.target.closest('[data-v]'); if (b) { S.hv = b.dataset.v; paneHist(); } };
   if ($('hp')) $('hp').onclick = (e) => { const b = e.target.closest('[data-p]'); if (b) { S.hp = !!b.dataset.p; S.hf = ''; paneHist(); } };
   if ($('hf')) $('hf').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { S.hf = b.dataset.f; paneHist(); } };
 }
