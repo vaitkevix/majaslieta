@@ -143,6 +143,7 @@ button,.chip,.tab{-webkit-user-select:none;user-select:none;touch-action:manipul
   <header class="top">
     <span class="lg" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11.5h14V9"/><path d="M9.5 20.5v-5h5v5"/></svg></span>
     <div class="t"><b class="bn">Mājas lieta</b><small id="hdSub">Kadastrs · dokumenti · darbi</small></div>
+    <button class="ib" id="btnHelp" aria-label="Palīdzība un pamācība" title="Palīdzība un pamācība"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5h.01"/></svg></button>
     <button class="ib" id="btnImp" aria-label="Ielīmēt no kadastra" title="Ielīmēt no kadastra"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M12 11v6M9 14l3 3 3-3"/></svg></button>
     <button class="ib" id="btnRefresh" aria-label="Atjaunot"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
   </header>
@@ -200,7 +201,7 @@ async function load() {
   $('vGate').hidden = true; $('vApp').hidden = false; $('tabs').hidden = false;
   $('hdSub').textContent = S.D.me.name + ' · ' + ({ admin: 'Administrators', vaditajs: 'Vadītājs', skatitajs: 'Skatītājs' }[S.D.me.role] || '');
   $('btnImp').hidden = !can('vaditajs');
-  render();
+  render(); if (window.SHXR && !S.tq) { S.tq = 1; SHXR.maybeTour(); }
 }
 $('btnRefresh').onclick = async () => { try { await load(); if (S.obj) await openObj(S.obj.obj.anorm); toast('Atjaunots'); } catch (e) { toast(e.message, 'err'); } };
 $('tabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; S.tab = b.dataset.tab; S.obj = null; render(); scrollTo(0, 0); };
@@ -831,6 +832,47 @@ if (IMP) { history.replaceState(null, '', location.pathname + location.search); 
 if (S.pin) load().catch(e => showGate(e.code === 'auth' ? e.message : e.message)); else showGate('');
 </script>
 
+<style>/* «?» poga galvenē: šaurā telefonā mazāka atstarpe */@media(max-width:420px){.top{gap:8px}}
+/* palīga izvēlne lieto lietotnes krāsas (arī tumšajā režīmā) */.shx-sheet{--surface-solid:var(--surf);--line:var(--surf2);--ink-2:var(--ink2);--ink-3:var(--ink3)}</style>
+<script>
+/* SH palīgs (sh-addon.js): izvēlne «?», pamācība pa lomām, pievienot sākuma ekrānam. Ieeja — lietotnes pašas (portāla sesija / PIN). © VAITKEVIX, SIA */
+window.SHX = { app: 'ml', external: true, a2hs: true,
+  getUser: function () { return S.D && S.D.me ? { name: S.D.me.name, kind: S.D.me.role } : null; },
+  homeTab: function () { return 'list'; },
+  switchTab: function (t) { if (S.tab !== t || S.obj) { S.tab = t; S.obj = null; render(); scrollTo(0, 0); } },
+  tours: {
+    admin: [
+      {"title": "Sveiki!", "text": "Īsa pamācība par Mājas lietu — visi objekti vienuviet. Aizņems pusminūti."},
+      {"sel": "#q", "tab": "list", "title": "Meklēt", "text": "Meklējiet pēc adreses, vadītāja vai kadastra numura."},
+      {"sel": "#oF", "tab": "list", "title": "Filtri", "text": "Atlasiet pēc vadītāja, grupas, pakalpojuma vai pārvaldnieka. «Vairāk filtru» — stāvi, dzīvokļi, būvgads."},
+      {"sel": "#oNew", "tab": "list", "title": "Jauns objekts", "text": "Pievienojiet jaunu objektu. Tas parādīsies visās lietotnēs."},
+      {"sel": "#selT", "tab": "list", "title": "Vairākiem uzreiz", "text": "Atzīmējiet objektus un nomainiet vadītāju, pārvaldnieku vai pakalpojumus visiem uzreiz. Te arī apvieno mājas."},
+      {"sel": "#view .list .obj, #view .list", "tab": "list", "title": "Objekts", "text": "Uzspiediet objektu — cilnes Objekts, Kadastrs, Dokumenti un Vēsture."},
+      {"sel": "#btnHelp", "title": "Palīdzība", "text": "Šeit atkal atradīsiet pamācību un pievienošanu sākuma ekrānam. Veiksmīgu darbu!"}
+    ],
+    vaditajs: [
+      {"title": "Sveiki!", "text": "Īsa pamācība par Mājas lietu — visi objekti vienuviet. Aizņems pusminūti."},
+      {"sel": "#q", "tab": "list", "title": "Meklēt", "text": "Meklējiet pēc adreses, vadītāja vai kadastra numura."},
+      {"sel": "#oF", "tab": "list", "title": "Filtri", "text": "Atlasiet pēc vadītāja, grupas, pakalpojuma vai pārvaldnieka. «Vairāk filtru» — stāvi, dzīvokļi, būvgads."},
+      {"sel": "#view .list .obj, #view .list", "tab": "list", "title": "Objekts", "text": "Uzspiediet objektu — cilnes Objekts, Kadastrs, Dokumenti un Vēsture."},
+      {"sel": "#btnImp", "title": "No kadastra", "text": "Ielīmējiet datus no kadastrs.lv — ēkas dati saglabāsies objektā."},
+      {"sel": "#btnHelp", "title": "Palīdzība", "text": "Šeit atkal atradīsiet pamācību un pievienošanu sākuma ekrānam. Veiksmīgu darbu!"}
+    ],
+    skatitajs: [
+      {"title": "Sveiki!", "text": "Īsa pamācība par Mājas lietu — visi objekti vienuviet. Aizņems pusminūti."},
+      {"sel": "#q", "tab": "list", "title": "Meklēt", "text": "Meklējiet pēc adreses, vadītāja vai kadastra numura."},
+      {"sel": "#oF", "tab": "list", "title": "Filtri", "text": "Atlasiet pēc vadītāja, grupas, pakalpojuma vai pārvaldnieka. «Vairāk filtru» — stāvi, dzīvokļi, būvgads."},
+      {"sel": "#view .list .obj, #view .list", "tab": "list", "title": "Objekts", "text": "Uzspiediet objektu — cilnes Objekts, Kadastrs, Dokumenti un Vēsture."},
+      {"sel": "#btnHelp", "title": "Palīdzība", "text": "Šeit atkal atradīsiet pamācību un pievienošanu sākuma ekrānam. Veiksmīgu darbu!"}
+    ]
+  }
+};
+</script>
+<script src="sh-addon.js?v=3"></script>
+<script>
+document.getElementById('btnHelp').onclick = function () { if (window.SHXR) SHXR.openSheet(); };
+if (S.D) { if (window.SHXR && !S.tq) { S.tq = 1; SHXR.maybeTour(); } }
+</script>
 <script>/* Esc aizver lapu (datorā) */addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('sheetBg') && typeof closeSheet === 'function') closeSheet(); });</script>
 </body>
 </html>
