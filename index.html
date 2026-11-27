@@ -718,30 +718,34 @@ async function paneReq() {
 const addD = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 function paneIek() {
   const R = S.obj, p = $('opane'), ED = !!R.ed, L = R.iek || [], t = addD(0);
-  const st = (i) => !i.pedeja ? ['Nav ievadīta', 'w'] : i.nakama < t ? ['Nokavēta ' + lvS(i.nakama), 'bad'] : i.nakama <= addD(30) ? ['Drīz ' + lvS(i.nakama), 'w'] : ['Nākamā ' + lvS(i.nakama) + ' ' + i.nakama.slice(0, 4), 'ok'];
-  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Iekārtas un apkopes</b>${ED ? '<button class="pill dk" id="iAdd">+ Iekārta</button>' : ''}</div>
-    <p class="meta" style="margin:4px 0 8px">Nākamā apkope = pēdējā + intervāls. Nokavētās un tuvāko 30 dienu apkopes redzamas portāla Panelī.</p>
+  const st = (i) => !i.pedeja && !i.nakama ? ['Nav ievadīta', 'w'] : i.nakama < t ? ['Nokavēta ' + lvS(i.nakama), 'bad'] : i.nakama <= addD(30) ? ['Drīz ' + lvS(i.nakama), 'w'] : ['Nākamā ' + lvS(i.nakama) + ' ' + i.nakama.slice(0, 4), 'ok'];
+  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Iekārtas un pārbaudes</b>${ED ? '<button class="pill dk" id="iAdd">+ Iekārta / pārbaude</button>' : ''}</div>
+    <p class="meta" style="margin:4px 0 8px">Nākamā = pēdējā + intervāls (vai datums ar roku). Obligātajām pārbaudēm vadītājs saņem atgādinājumu 30 un 7 dienas iepriekš; nokavētās redzamas portāla Panelī un Rīta ziņā.</p>
     <div class="list">${L.map(i => { const S2 = st(i), A = (R.apk || []).filter(a => a.iek === i.id).slice(0, 3);
-      return `<div class="kont iek"><span class="tx"><b>${esc(i.nosaukums)}</b><span>${esc(i.veids)} · ik ${i.intervals} mēn.${i.atbildigais ? ' · ' + esc(i.atbildigais) : ''}${i.pedeja ? ' · pēdējā ' + esc(lvS(i.pedeja)) + i.pedeja.slice(0, 4) : ''}</span>
+      return `<div class="kont iek"><span class="tx"><b>${esc(i.nosaukums)}${i.obligata ? ' <span class="chip" style="font-size:11px;padding:3px 8px">obligāta</span>' : ''}</b><span>${esc(i.veids)} · ik ${i.intervals} mēn.${i.atbildigais ? ' · ' + esc(i.atbildigais) : ''}${i.pedeja ? ' · pēdējā ' + esc(lvS(i.pedeja)) + i.pedeja.slice(0, 4) : ''}</span>
         ${i.dok ? `<span class="lnk">${/^https?:\/\//.test(i.dok) ? `<a href="${esc(i.dok)}" target="_blank" rel="noopener">Dokuments</a>` : esc(i.dok)}</span>` : ''}
         ${A.length ? `<span class="meta" style="display:block">${A.map(a => esc(lvS(a.datums)) + a.datums.slice(0, 4) + (a.piezime ? ' — ' + esc(a.piezime) : '')).join(' · ')}</span>` : ''}</span>
-        <span class="st2"><span class="chip ${S2[1]}">${S2[0]}</span>${ED ? `<button class="pill dk" data-ia="${esc(i.id)}">Apkope veikta</button><button class="pill" data-ie="${esc(i.id)}">Labot</button>` : ''}</span></div>`; }).join('') || '<div class="empty" style="padding:10px 0">Iekārtu vēl nav — piem. lifts, siltummezgls, ugunsdzēšamie aparāti, vārti</div>'}</div></div>`;
+        <span class="st2"><span class="chip ${S2[1]}">${S2[0]}</span>${ED ? `<button class="pill dk" data-ia="${esc(i.id)}">${i.obligata ? 'Pārbaude veikta' : 'Apkope veikta'}</button><button class="pill" data-ie="${esc(i.id)}">Labot</button>` : ''}</span></div>`; }).join('') || '<div class="empty" style="padding:10px 0">Iekārtu vēl nav — piem. lifts, siltummezgls, ugunsdzēšamie aparāti, vārti</div>'}</div></div>`;
   if ($('iAdd')) $('iAdd').onclick = () => iekSheet(null);
   p.querySelectorAll('[data-ie]').forEach(b => b.onclick = () => iekSheet(L.find(i => i.id === b.dataset.ie)));
   p.querySelectorAll('[data-ia]').forEach(b => b.onclick = () => apkSheet(L.find(i => i.id === b.dataset.ia)));
 }
 function iekSheet(i) {
-  const R = S.obj, V = R.iekVeidi || ['Cits'];
-  const s = sheet(`<div class="hd"><h3>${i ? 'Labot iekārtu' : 'Jauna iekārta'}</h3>${X}</div>
+  const R = S.obj, V = R.iekVeidi || ['Cits'], TPL = R.iekTpl || {};
+  const s = sheet(`<div class="hd"><h3>${i ? 'Labot iekārtu' : 'Jauna iekārta / pārbaude'}</h3>${X}</div>
     <div class="f"><label for="iV">Veids</label><select id="iV">${V.map(v => `<option ${i && i.veids === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
     <div class="f"><label for="iN">Nosaukums</label><input id="iN" maxlength="100" value="${esc(i ? i.nosaukums : '')}" placeholder="Piem. Lifts 1. kāpņu telpā"></div>
-    <div class="row2c"><div class="f"><label for="iI">Apkope ik (mēneši)</label><input id="iI" type="number" min="1" max="120" inputmode="numeric" value="${i ? i.intervals : 12}"></div><div class="f"><label for="iP">Pēdējā apkope</label><input id="iP" type="date" value="${esc(i ? i.pedeja : '')}"></div></div>
+    <div class="row2c"><div class="f"><label for="iI">Apkope ik (mēneši)</label><input id="iI" type="number" min="1" max="120" inputmode="numeric" value="${i ? i.intervals : 12}"></div><div class="f"><label for="iP">Pēdējā apkope / pārbaude</label><input id="iP" type="date" value="${esc(i ? i.pedeja : '')}"></div></div>
+    <div class="row2c"><div class="f"><label for="iNx">Nākamā (ja zināma, piem. polises beigas)</label><input id="iNx" type="date" value="${esc(i ? i.manual || '' : '')}"></div>
+      <div class="f"><label class="ochk" style="margin-top:26px"><input type="checkbox" id="iOb" ${(i ? i.obligata : TPL[V[0]]) ? 'checked' : ''}> Obligāta pārbaude (atgādinājumi)</label></div></div>
     <div class="f"><label for="iA">Atbildīgais (uzņēmums / persona)</label><input id="iA" maxlength="100" value="${esc(i ? i.atbildigais : '')}" placeholder="Piem. SIA Liftu serviss, 2xxxxxxx"></div>
     <div class="f"><label for="iD">Dokuments (saite vai nr.)</label><input id="iD" maxlength="300" value="${esc(i ? i.dok : '')}" placeholder="Līgums, akts vai saite uz failu"></div>
     <div class="f"><label for="iZ">Piezīme</label><input id="iZ" maxlength="500" value="${esc(i ? i.piezime : '')}"></div>
     <div class="acts">${i ? '<button class="btn-lt" id="iOff">Noņemt</button>' : '<button class="btn-lt" data-x>Atcelt</button>'}<button class="btn-dk" id="iGo">Saglabāt</button></div>`);
-  const go = async (b, off) => { busy(b, '…'); try { await call('iekSave', { anorm: R.obj.anorm, i: { id: i ? i.id : '', veids: $('iV').value, nosaukums: $('iN').value, intervals: $('iI').value, pedeja: $('iP').value, atbildigais: $('iA').value, dok: $('iD').value, piezime: $('iZ').value, aktivs: !off } });
+  const go = async (b, off) => { busy(b, '…'); try { await call('iekSave', { anorm: R.obj.anorm, i: { id: i ? i.id : '', veids: $('iV').value, nosaukums: $('iN').value, intervals: $('iI').value, pedeja: $('iP').value, nakama: $('iNx').value, obligata: $('iOb').checked, atbildigais: $('iA').value, dok: $('iD').value, piezime: $('iZ').value, aktivs: !off } });
     closeSheet(); toast(off ? 'Noņemts' : 'Saglabāts'); await openObj(R.obj.anorm); S.otab = 'iek'; renderObj(); } catch (e) { unbusy(b); toast(e.message, 'err'); } };
+  if (!i) $('iV').onchange = () => { const v = $('iV').value; if (TPL[v]) { $('iI').value = TPL[v]; $('iOb').checked = true; if (!$('iN').value) $('iN').placeholder = v; } else $('iOb').checked = false; };
+  if (!i && TPL[V[0]]) $('iI').value = TPL[V[0]];
   $('iGo').onclick = () => go($('iGo')); if ($('iOff')) $('iOff').onclick = () => { if (confirm('Noņemt iekārtu no reģistra? Vēsture paliek.')) go($('iOff'), true); };
 }
 function apkSheet(i) {
