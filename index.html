@@ -305,11 +305,11 @@ async function openObj(a) {
 function renderObj() {
   const R = S.obj, o = R.obj;
   $('view').innerHTML = `<button class="back" id="back">‹ Visi objekti</button><h1 class="pt">${esc(o.adrese)}</h1>
-    <div class="seg" id="otab">${[['info', 'Objekts'], ['kont', 'Kontakti'], ['iek', 'Iekārtas' + ((R.iek || []).some(i => !i.nakama || i.nakama <= addD(30)) ? ' !' : '')], ['sk', 'Skaitītāji'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+    <div class="seg" id="otab">${[['info', 'Objekts'], ['kont', 'Kontakti'], ['req', 'Pieteikumi' + (((S.D && S.D.reqN) || {})[o.anorm] ? ' · ' + S.D.reqN[o.anorm] : '')], ['iek', 'Iekārtas' + ((R.iek || []).some(i => !i.nakama || i.nakama <= addD(30)) ? ' !' : '')], ['sk', 'Skaitītāji'], ['kad', 'Kadastrs'], ['doc', 'Dokumenti' + (R.docs.length ? ' · ' + R.docs.length : '')], ['hist', 'Vēsture']].map(([k, l]) => `<button data-o="${k}" class="${S.otab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div id="opane"></div>`;
   $('back').onclick = () => { S.obj = null; render(); };
   $('otab').onclick = (e) => { const b = e.target.closest('[data-o]'); if (b) { S.otab = b.dataset.o; renderObj(); } };
-  ({ info: paneInfo, kont: paneKont, iek: paneIek, sk: paneSk, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
+  ({ info: paneInfo, kont: paneKont, req: paneReq, iek: paneIek, sk: paneSk, kad: paneKad, doc: paneDoc, hist: paneHist })[S.otab]();
 }
 
 /* ---------- Objekts: pamatdati un objekta kartīte (agrāk portāla Administrēšana → Objekti) ---------- */
@@ -681,6 +681,39 @@ function kontSheet(c) {
 }
 const APPN = { pl: 'Pļaušana', logi: 'Logi', darz: 'Dārzniecība', stav: 'Stāvvieta', sniegs: 'Sniegs', aizv: 'Aizvietošana', izv: 'Izvešana', kais: 'Kaisāmmat.' };
 const APPC = { pl: 'mint', logi: 'sky', darz: 'mint', stav: 'sand', sniegs: 'lilac', aizv: 'mint', izv: 'sand', kais: 'sky' };
+/* ---------- I3/I4 pieteikumi par māju: iedzīvotāji (QR mājas lapa) un darbinieki («Pamanīju bojājumu», SMS BOJ) ---------- */
+const RQ_ST = { 'jauns': ['Jauns', 'w'], 'darbā': ['Darbā', ''], 'atrisināts': ['Atrisināts', 'ok'] };
+async function paneReq() {
+  const R = S.obj, p = $('opane'), ED = !!R.ed;
+  if (!R.req) { p.innerHTML = '<div class="skel"></div>'; try { R.req = await call('reqList', { anorm: R.obj.anorm }); } catch (e) { p.innerHTML = `<div class="card empty">${esc(e.message)}</div>`; return; } if (S.obj !== R || S.otab !== 'req') return; }
+  const Q = R.req, L = Q.list;
+  p.innerHTML = `<div class="card" style="margin:0 0 12px"><div class="ch"><b>Pieteikumi par māju</b>${can('admin') ? `<label class="ochk" style="margin:0"><input type="checkbox" id="rqAi" ${Q.ai ? 'checked' : ''}> AI kategorija</label>` : ''}</div>
+    <p class="meta" style="margin:4px 0 8px">Iedzīvotāji ziņo caur mājas lapas QR kodu (Objekts → Mājas lapa), darbinieki — ar pogu «Pamanīju bojājumu» vai SMS «BOJ kods teksts». Iedzīvotājs redz tikai statusu un atbildi.</p>
+    <div class="list">${L.map(r => { const st = RQ_ST[r.statuss] || [r.statuss, ''];
+      return `<div class="kont iek"><span class="tx"><b>${esc(r.kategorija || 'Cits')}${r.steidz === 'augsta' ? ' · <span style="color:var(--bad)">steidzami</span>' : ''}</b>
+        <span>${r.avots === 'darbinieks' ? 'Darbinieks' + (r.kas ? ' · ' + esc(r.kas) : '') : 'Iedzīvotājs'} · ${esc(r.laiks)}${r.kontakts ? ' · ' + esc(r.kontakts) : ''}</span>
+        <span style="display:block;white-space:pre-wrap;overflow-wrap:anywhere;font-weight:600;margin-top:4px">${esc(r.teksts)}</span>
+        ${r.ai && r.ai.iemesls ? `<span class="meta" style="display:block">AI: ${esc(r.ai.iemesls)}</span>` : ''}
+        ${r.foto ? `<a class="lnk" href="https://vaitkevix.cloud/sh/api/img?sz=w1600&id=${encodeURIComponent(r.foto)}" target="_blank" rel="noopener">Bilde</a>` : ''}
+        ${r.darbs ? `<span class="meta" style="display:block">Darbs: ${esc(({ aizv: 'Aizvietošana', logi: 'Logi', darz: 'Dārzniecība', stav: 'Stāvvietas', pl: 'Pļaušana' })[r.darbs.split(':')[0]] || r.darbs)}</span>` : ''}
+        ${r.atbilde ? `<span class="meta" style="display:block">Atbilde: ${esc(r.atbilde)}</span>` : ''}</span>
+        <span class="st2"><span class="chip ${st[1]}">${esc(st[0])}</span>${ED ? `<button class="pill" data-rs="${esc(r.id)}">Statuss</button>${r.darbs ? '' : `<button class="pill dk" data-rj="${esc(r.id)}">Izveidot darbu</button>`}` : ''}</span></div>`; }).join('') || '<div class="empty" style="padding:10px 0">Pieteikumu vēl nav</div>'}</div></div>`;
+  const reload = (r) => { R.req = Object.assign({}, R.req, { list: r.list }); if (S.D && S.D.reqN) S.D.reqN[R.obj.anorm] = r.list.filter(x => x.statuss === 'jauns').length; renderObj(); };
+  if ($('rqAi')) $('rqAi').onchange = async (e) => { try { await call('mlreqAi', { on: e.target.checked }); R.req.ai = e.target.checked; toast(e.target.checked ? 'AI kategorija ieslēgta' : 'AI kategorija izslēgta'); } catch (er) { toast(er.message, 'err'); e.target.checked = !e.target.checked; } };
+  p.querySelectorAll('[data-rs]').forEach(b => b.onclick = () => { const r = L.find(x => x.id === b.dataset.rs);
+    sheet(`<div class="hd"><h3>Pieteikuma statuss</h3>${X}</div>
+      <div class="f"><label for="rsS">Statuss</label><select id="rsS">${Q.st.map(v => `<option value="${esc(v)}" ${r.statuss === v ? 'selected' : ''}>${esc((RQ_ST[v] || [v])[0])}</option>`).join('')}</select></div>
+      <div class="f"><label for="rsA">Atbilde (redz iedzīvotājs pēc saites)</label><input id="rsA" maxlength="300" value="${esc(r.atbilde || '')}" placeholder="Piem. Lampa nomainīta 29.11."></div>
+      <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="rsGo">Saglabāt</button></div>`);
+    $('rsGo').onclick = async () => { const g = $('rsGo'); busy(g, '…'); try { const x = await call('reqSet', { id: r.id, statuss: $('rsS').value, atbilde: $('rsA').value }); closeSheet(); toast('Saglabāts'); reload(x); } catch (e) { unbusy(g); toast(e.message, 'err'); } }; });
+  p.querySelectorAll('[data-rj]').forEach(b => b.onclick = () => { const r = L.find(x => x.id === b.dataset.rj), A = Q.apps || {};
+    sheet(`<div class="hd"><h3>Izveidot darbu</h3>${X}</div><p class="meta" style="margin:0 0 10px">${esc(r.kategorija || 'Cits')}: ${esc(r.teksts.slice(0, 160))}</p>
+      <div class="f"><label for="rjA">Lietotne</label><select id="rjA">${Object.keys(A).map(k => `<option value="${k}">${esc(A[k])}</option>`).join('')}</select></div>
+      <div class="f"><label for="rjD">Datums</label><input id="rjD" type="date" min="${addD(0)}" value="${addD(0)}"></div>
+      <p class="hint">Aizvietošanā darbs tiek izveidots kā «jauns» — brigādi piešķir vadītājs. Grafika lietotnēs — vienreizējs pieteikums.</p>
+      <div class="acts"><button class="btn-lt" data-x>Atcelt</button><button class="btn-dk" id="rjGo">Izveidot</button></div>`);
+    $('rjGo').onclick = async () => { const g = $('rjGo'); busy(g, '…'); try { const x = await call('reqJob', { id: r.id, app: $('rjA').value, datums: $('rjD').value }); closeSheet(); toast('Darbs izveidots ✓'); reload(x); } catch (e) { unbusy(g); toast(e.message, 'err'); } }; });
+}
 /* ---------- F-ml(1) iekārtas un apkopes ---------- */
 const addD = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
 function paneIek() {
