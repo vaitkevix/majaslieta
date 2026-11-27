@@ -118,7 +118,7 @@ button{cursor:pointer}
 </style>
 <style id="sh-polish">
 .afil select.on{background:var(--dark);color:var(--ondark)}
-@media (min-width:1000px){.list:not(:has(.stop)){display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:10px;align-items:start}}   /* datorā saraksti kolonnās (maršruts paliek secībā) */
+@media (min-width:1000px){.list:not(:has(.stop)){display:grid;grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr));gap:10px;align-items:start}}   /* datorā saraksti kolonnās (maršruts paliek secībā) */
 @media (hover:none) and (pointer:coarse){[data-tab="poga"],#kHow{display:none!important}}   /* Safari poga der tikai Mac *//* pieskāriena sajūta, iPhone pietuvinājums, samazināta kustība */
 button:not(:disabled):active{scale:.97}
 button,.chip,.tab{-webkit-user-select:none;user-select:none;touch-action:manipulation}
@@ -619,7 +619,7 @@ function paneHist() {
   $('opane').innerHTML = (HP.length ? `<div class="chips" id="hp" style="margin:0 0 8px"><button data-p="" class="${S.hp ? '' : 'on'}">Tikai šis objekts</button><button data-p="1" class="${S.hp ? 'on' : ''}">+ sastāvdaļu darbi · ${HP.length}</button></div>` : '') + (apps.length > 1 ? `<div class="chips" id="hf" style="margin:0 0 12px"><button data-f="" class="${!S.hf ? 'on' : ''}">Visi · ${H.length}</button>${apps.map(a => `<button data-f="${a}" class="${S.hf === a ? 'on' : ''}">${APPN[a] || a}</button>`).join('')}</div>` : '') +
     `<div class="list">${L.map(h => `<div class="hist ${h.plan ? 'plan' : ''}"><span class="d">${lvS(h.datums)}<small>${esc(String(h.datums || '').slice(0, 4))}</small></span>
       <span class="tx"><b>${esc(h.name)}${h.part ? ' · ' + esc(h.part) : ''}</b><span>${esc(h.statuss || '')}${h.kas ? ' · ' + esc(h.kas) : ''}${h.teksts ? ' · ' + esc(h.teksts) : ''}</span>
-      ${h.foto && h.foto.length ? `<span class="ph">${h.foto.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u.replace('sz=w1600', 'sz=w300'))}" alt="Bilde" loading="lazy"></a>`).join('')}</span>` : ''}</span>
+      ${h.foto && h.foto.length ? `<span class="ph">${h.foto.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u.replace('sz=w1600', 'sz=w300'))}" alt="Bilde" loading="lazy" decoding="async"></a>`).join('')}</span>` : ''}</span>
       <span class="chip ${APPC[h.app] || ''}">${esc(APPN[h.app] || h.app)}</span></div>`).join('') || '<div class="empty">Darbu vēl nav</div>'}</div>`;
   if ($('hp')) $('hp').onclick = (e) => { const b = e.target.closest('[data-p]'); if (b) { S.hp = !!b.dataset.p; S.hf = ''; paneHist(); } };
   if ($('hf')) $('hf').onclick = (e) => { const b = e.target.closest('[data-f]'); if (b) { S.hf = b.dataset.f; paneHist(); } };
